@@ -1,0 +1,519 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  BookMarked, Target, Brain, Lightbulb, ChevronRight, ChevronDown,
+  CheckCircle2, Circle, Play, RotateCcw, Bookmark, Trash2, X, Search, AlertTriangle
+} from 'lucide-react'
+import { READING_PLANS } from '../data/readingPlans'
+import { useSpiritualContext } from '../context/SpiritualContext'
+import { useLocalStorage } from '../hooks/useLocalStorage'
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.35 } }),
+}
+
+// ─── Plans de lecture ──────────────────────────────────────────────────────────
+function ReadingPlans() {
+  const { readingProgress, markBibleRead } = useSpiritualContext()
+  const [activePlanId, setActivePlanId] = useLocalStorage('fj_activePlan', null)
+  const [planStartDate, setPlanStartDate] = useLocalStorage('fj_planStart', null)
+  const [expanded, setExpanded] = useState(null)
+  const navigate = useNavigate()
+
+  const activePlan = READING_PLANS.find(p => p.id === activePlanId)
+
+  const startPlan = (planId) => {
+    setActivePlanId(planId)
+    setPlanStartDate(new Date().toISOString())
+  }
+
+  const stopPlan = () => {
+    setActivePlanId(null)
+    setPlanStartDate(null)
+  }
+
+  const getPlanProgress = (plan) => {
+    const done = plan.chapters.filter(c => readingProgress[c.key]).length
+    return { done, total: plan.chapters.length, pct: Math.round((done / plan.chapters.length) * 100) }
+  }
+
+  // Today's reading for the active plan
+  const getTodaysReading = () => {
+    if (!activePlan || !planStartDate) return []
+    const daysSinceStart = Math.floor((Date.now() - new Date(planStartDate)) / 86400000)
+    const start = daysSinceStart * activePlan.dailyCount
+    return activePlan.chapters.slice(start, start + activePlan.dailyCount)
+  }
+
+  const todaysReading = getTodaysReading()
+
+  return (
+    <div className="space-y-4">
+      {/* Today's reading */}
+      {activePlan && todaysReading.length > 0 && (
+        <div className={`card border ${activePlan.color}`}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+              <Target size={12} /> Lecture du jour
+            </p>
+            <span className={`badge border text-xs ${activePlan.color}`}>{activePlan.icon} {activePlan.name}</span>
+          </div>
+          <div className="space-y-2">
+            {todaysReading.map(ch => {
+              const done = readingProgress[ch.key]
+              return (
+                <div key={ch.key} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                  done ? 'bg-emerald-500/8 border-emerald-500/20' : 'bg-navy-700 border-navy-600'
+                }`}>
+                  {done
+                    ? <CheckCircle2 size={18} className="text-emerald-400 flex-shrink-0" />
+                    : <Circle size={18} className="text-slate-600 flex-shrink-0" />
+                  }
+                  <span className={`flex-1 text-sm font-medium ${done ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                    {ch.bookName} {ch.chapter}
+                  </span>
+                  {!done && (
+                    <button
+                      onClick={() => navigate(`/bible`)}
+                      className="text-xs text-gold-500 hover:text-gold-400 flex items-center gap-1"
+                    >
+                      Lire <ChevronRight size={12} />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {/* Progress */}
+          <div className="mt-3">
+            {(() => { const p = getPlanProgress(activePlan); return (
+              <>
+                <div className="flex justify-between text-xs text-slate-600 mb-1">
+                  <span>{p.done}/{p.total} chapitres</span>
+                  <span>{p.pct}%</span>
+                </div>
+                <div className="h-1.5 bg-navy-900 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full bg-gold-400 transition-all duration-500" style={{ width: `${p.pct}%` }} />
+                </div>
+              </>
+            )})()}
+          </div>
+          <button onClick={stopPlan} className="mt-3 text-xs text-slate-600 hover:text-red-400 flex items-center gap-1 transition-colors">
+            <X size={11} /> Abandonner ce plan
+          </button>
+        </div>
+      )}
+
+      {/* Plan list */}
+      <p className="text-sm text-slate-500 font-medium">Choisir un plan :</p>
+      <div className="space-y-2">
+        {READING_PLANS.map((plan, i) => {
+          const prog = getPlanProgress(plan)
+          const isActive = activePlanId === plan.id
+          return (
+            <motion.div key={plan.id} variants={fadeUp} custom={i}
+              className={`card border cursor-pointer transition-all ${isActive ? plan.color : 'border-navy-600 hover:border-navy-500'}`}
+            >
+              <div className="flex items-start gap-3" onClick={() => setExpanded(expanded === plan.id ? null : plan.id)}>
+                <span className="text-2xl flex-shrink-0">{plan.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-slate-200 text-sm">{plan.name}</h3>
+                    {isActive && <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">Actif</span>}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">{plan.duration}</p>
+                  {prog.done > 0 && (
+                    <div className="mt-2 h-1 bg-navy-900 rounded-full overflow-hidden w-32">
+                      <div className="h-full rounded-full bg-gold-400" style={{ width: `${prog.pct}%` }} />
+                    </div>
+                  )}
+                </div>
+                <ChevronDown size={15} className={`text-slate-600 flex-shrink-0 transition-transform ${expanded === plan.id ? 'rotate-180' : ''}`} />
+              </div>
+              <AnimatePresence>
+                {expanded === plan.id && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden">
+                    <p className="text-sm text-slate-400 leading-relaxed mt-3 mb-3">{plan.description}</p>
+                    <p className="text-xs text-slate-500 mb-3">{plan.chapters.length} chapitres · {plan.dailyCount} ch/jour</p>
+                    {!isActive ? (
+                      <button onClick={() => startPlan(plan.id)} className="btn-primary text-sm flex items-center gap-2">
+                        <Play size={13} /> Commencer ce plan
+                      </button>
+                    ) : (
+                      <p className="text-xs text-emerald-400">✓ Plan en cours — {prog.pct}% terminé</p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Examen de conscience ──────────────────────────────────────────────────────
+const EXAMINATION = [
+  {
+    category: 'Envers Dieu',
+    icon: '✝️',
+    questions: [
+      'Ai-je prié régulièrement et avec sincérité ?',
+      'Ai-je lu et médité la Parole de Dieu ?',
+      'Ai-je mis ma confiance en Dieu ou ai-je cédé à l\'anxiété et au doute ?',
+      'Ai-je prononcé le nom de Dieu de façon irrespectueuse ?',
+      'Ai-je pratiqué ma foi courageusement ou me suis-je caché(e) ?',
+      'Ai-je remercié Dieu pour ses bienfaits ?',
+    ],
+  },
+  {
+    category: 'Envers les autres',
+    icon: '❤️',
+    questions: [
+      'Ai-je manqué de respect, blessé ou offensé quelqu\'un ?',
+      'Ai-je menti, trompé ou manipulé ?',
+      'Ai-je été envieux/euse ou jaloux/se ?',
+      'Ai-je pardonné à ceux qui m\'ont blessé(e) ?',
+      'Ai-je aidé quelqu\'un dans le besoin quand j\'en avais la possibilité ?',
+      'Ai-je jugé ou médis d\'une personne ?',
+    ],
+  },
+  {
+    category: 'Envers moi-même',
+    icon: '🪞',
+    questions: [
+      'Ai-je cédé à la colère, à l\'orgueil ou à l\'impatience ?',
+      'Ai-je entretenu des pensées impures, violentes ou négatives ?',
+      'Ai-je abusé de nourriture, de médias, de divertissements ?',
+      'Ai-je pris soin de ma santé physique et mentale comme d\'un temple de Dieu ?',
+      'Ai-je procrastiné ou évité mes responsabilités ?',
+    ],
+  },
+  {
+    category: 'Béatitudes',
+    icon: '🕊️',
+    questions: [
+      'Ai-je été pauvre en esprit — humble devant Dieu et les hommes ?',
+      'Ai-je été artisan(e) de paix dans mes relations ?',
+      'Ai-je eu faim et soif de justice ?',
+      'Ai-je fait miséricorde à ceux qui ont failli ?',
+      'Ai-je été persécuté(e) à cause du bien que je voulais faire ?',
+    ],
+  },
+]
+
+function ExaminationOfConscience() {
+  const [checked, setChecked] = useState({})
+  const [phase, setPhase] = useState('exam') // 'exam' | 'prayer'
+
+  const toggle = (catIdx, qIdx) => {
+    const key = `${catIdx}-${qIdx}`
+    setChecked(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const checkedCount = Object.values(checked).filter(Boolean).length
+  const totalQuestions = EXAMINATION.reduce((s, c) => s + c.questions.length, 0)
+
+  if (phase === 'prayer') {
+    return (
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <div className="card-glass border border-gold-500/15">
+          <p className="text-xs text-gold-500 font-semibold uppercase tracking-wider mb-3">Prière d'acte de contrition</p>
+          <p className="text-sm text-slate-300 leading-loose font-serif italic">
+            "Mon Dieu, j'ai un grand regret de vous avoir offensé, parce que vous êtes infiniment bon, infiniment aimable, et que le péché vous déplaît. Je prends la ferme résolution, avec le secours de votre sainte grâce, de ne plus vous offenser et de faire pénitence. Amen."
+          </p>
+        </div>
+        <div className="card-glass border border-spirit-500/15">
+          <p className="text-xs text-spirit-400 font-semibold uppercase tracking-wider mb-3">Rappel de la miséricorde</p>
+          <p className="text-sm text-slate-300 leading-relaxed italic font-serif">
+            « Si nous confessons nos péchés, il est fidèle et juste pour nous les pardonner, et pour nous purifier de toute iniquité. »
+          </p>
+          <p className="text-xs text-gold-500 mt-2">1 Jean 1:9</p>
+        </div>
+        <button onClick={() => setPhase('exam')} className="btn-secondary text-sm flex items-center gap-2">
+          <RotateCcw size={13} /> Recommencer l'examen
+        </button>
+      </motion.div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-slate-500 leading-relaxed">
+        Cochez les points qui vous touchent. Cet examen est entièrement privé — il n'est pas sauvegardé.
+      </p>
+      {EXAMINATION.map((cat, ci) => (
+        <div key={ci} className="card space-y-2">
+          <h4 className="font-semibold text-slate-200 text-sm flex items-center gap-2">
+            <span>{cat.icon}</span> {cat.category}
+          </h4>
+          {cat.questions.map((q, qi) => {
+            const key = `${ci}-${qi}`
+            const isChecked = checked[key]
+            return (
+              <button key={qi} onClick={() => toggle(ci, qi)}
+                className={`w-full text-left flex items-start gap-3 p-2.5 rounded-xl transition-all ${
+                  isChecked ? 'bg-red-500/8 border border-red-500/20' : 'hover:bg-navy-700'
+                }`}
+              >
+                <div className={`mt-0.5 flex-shrink-0 transition-colors ${isChecked ? 'text-red-400' : 'text-slate-600'}`}>
+                  {isChecked ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                </div>
+                <p className={`text-sm leading-relaxed ${isChecked ? 'text-slate-400' : 'text-slate-300'}`}>{q}</p>
+              </button>
+            )
+          })}
+        </div>
+      ))}
+      {checkedCount > 0 && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="card border border-gold-500/20 text-center py-5 space-y-3">
+          <p className="text-slate-400 text-sm">
+            {checkedCount} point{checkedCount > 1 ? 's' : ''} identifié{checkedCount > 1 ? 's' : ''}.
+            Confiez-les à Dieu dans la prière.
+          </p>
+          <button onClick={() => setPhase('prayer')} className="btn-primary text-sm mx-auto flex items-center gap-2">
+            Prier l'acte de contrition →
+          </button>
+        </motion.div>
+      )}
+    </div>
+  )
+}
+
+// ─── Méditations thématiques ───────────────────────────────────────────────────
+const THEMES = [
+  {
+    id: 'paix', label: 'La Paix', icon: '🕊️', color: 'text-blue-400',
+    verses: [
+      { ref: 'Jean 14:27', text: 'Je vous laisse la paix, je vous donne ma paix. Je ne vous la donne pas comme le monde la donne.' },
+      { ref: 'Philippiens 4:7', text: 'La paix de Dieu, qui surpasse toute intelligence, gardera vos cœurs et vos pensées en Jésus-Christ.' },
+      { ref: 'Psaumes 46:10', text: 'Arrêtez, et sachez que je suis Dieu.' },
+      { ref: 'Ésaïe 26:3', text: 'A celui dont l\'esprit est ferme tu assures la paix, la paix, parce qu\'il se confie en toi.' },
+    ],
+  },
+  {
+    id: 'pardon', label: 'Le Pardon', icon: '🤍', color: 'text-slate-300',
+    verses: [
+      { ref: '1 Jean 1:9', text: 'Si nous confessons nos péchés, il est fidèle et juste pour nous les pardonner, et pour nous purifier de toute iniquité.' },
+      { ref: 'Romains 8:1', text: 'Il n\'y a donc maintenant aucune condamnation pour ceux qui sont en Jésus-Christ.' },
+      { ref: 'Lamentations 3:22-23', text: 'Les bontés de l\'Éternel ne sont pas épuisées, ses compassions ne sont pas à leur terme ; elles se renouvellent chaque matin.' },
+      { ref: 'Michée 7:18', text: 'Quel Dieu est semblable à toi, qui pardonnes l\'iniquité, qui passes sur la transgression du reste de ton héritage ?' },
+    ],
+  },
+  {
+    id: 'force', label: 'La Force', icon: '💪', color: 'text-orange-400',
+    verses: [
+      { ref: 'Philippiens 4:13', text: 'Je puis tout par celui qui me fortifie.' },
+      { ref: 'Ésaïe 40:31', text: 'Mais ceux qui se confient en l\'Éternel renouvellent leur force. Ils prennent le vol comme les aigles.' },
+      { ref: '2 Timothée 1:7', text: 'Car ce n\'est pas un esprit de timidité que Dieu nous a donné, mais un esprit de force, d\'amour et de sagesse.' },
+      { ref: 'Josué 1:9', text: 'Sois fort et courageux. Ne te laisse pas abattre et ne sois pas troublé, car l\'Éternel, ton Dieu, est avec toi.' },
+    ],
+  },
+  {
+    id: 'amour', label: "L'Amour de Dieu", icon: '❤️', color: 'text-red-400',
+    verses: [
+      { ref: 'Jean 3:16', text: 'Car Dieu a tant aimé le monde qu\'il a donné son Fils unique, afin que quiconque croit en lui ne périsse pas, mais ait la vie éternelle.' },
+      { ref: 'Romains 5:8', text: 'Mais Dieu prouve son amour envers nous, en ce que, lorsque nous étions encore des pécheurs, Christ est mort pour nous.' },
+      { ref: '1 Jean 4:8', text: 'Celui qui n\'aime pas n\'a pas connu Dieu, car Dieu est amour.' },
+      { ref: 'Jérémie 31:3', text: 'Je t\'ai aimé d\'un amour éternel ; c\'est pourquoi je te conserve ma grâce.' },
+    ],
+  },
+  {
+    id: 'confiance', label: 'La Confiance', icon: '⚓', color: 'text-gold-400',
+    verses: [
+      { ref: 'Proverbes 3:5-6', text: 'Confie-toi en l\'Éternel de tout ton cœur, et ne t\'appuie pas sur ta sagesse ; reconnais-le dans toutes tes voies, et il aplanira tes sentiers.' },
+      { ref: 'Jérémie 29:11', text: 'Car je connais les projets que j\'ai formés sur vous, projets de paix et non de malheur, afin de vous donner un avenir et de l\'espérance.' },
+      { ref: 'Psaumes 37:5', text: 'Recommande ton sort à l\'Éternel, mets en lui ta confiance, et il agira.' },
+      { ref: 'Romains 8:28', text: 'Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu.' },
+    ],
+  },
+  {
+    id: 'guerison', label: 'La Guérison', icon: '🌿', color: 'text-emerald-400',
+    verses: [
+      { ref: 'Psaumes 147:3', text: 'Il guérit ceux qui ont le cœur brisé, et il panse leurs blessures.' },
+      { ref: 'Ésaïe 53:5', text: 'Mais il était blessé pour nos péchés, brisé pour nos iniquités ; le châtiment qui nous donne la paix est tombé sur lui, et c\'est par ses meurtrissures que nous sommes guéris.' },
+      { ref: 'Matthieu 11:28', text: 'Venez à moi, vous tous qui vous fatiguez et qui êtes chargés, et je vous donnerai du repos.' },
+      { ref: 'Apocalypse 21:4', text: 'Il essuiera toute larme de leurs yeux, et la mort ne sera plus, et il n\'y aura plus ni deuil, ni cri, ni douleur.' },
+    ],
+  },
+]
+
+function MeditationThemes() {
+  const [selected, setSelected] = useState(null)
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        {THEMES.map(theme => (
+          <button key={theme.id} onClick={() => setSelected(selected === theme.id ? null : theme.id)}
+            className={`p-3.5 rounded-xl border text-left transition-all min-h-[60px] ${
+              selected === theme.id
+                ? `bg-navy-700 border-navy-400`
+                : 'bg-navy-800 border-navy-600 hover:border-navy-500'
+            }`}
+          >
+            <span className="text-xl block mb-1">{theme.icon}</span>
+            <p className={`text-xs font-semibold ${theme.color}`}>{theme.label}</p>
+          </button>
+        ))}
+      </div>
+      <AnimatePresence>
+        {selected && (() => {
+          const theme = THEMES.find(t => t.id === selected)
+          return (
+            <motion.div key={selected}
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="space-y-2"
+            >
+              <p className="text-xs text-slate-500 font-medium px-1">{theme.icon} {theme.label}</p>
+              {theme.verses.map((v, i) => (
+                <div key={i} className="card-glass p-4">
+                  <p className="text-sm text-slate-300 leading-relaxed font-serif italic mb-2">« {v.text} »</p>
+                  <p className="text-xs text-gold-500 font-medium">{v.ref}</p>
+                </div>
+              ))}
+            </motion.div>
+          )
+        })()}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Signets ───────────────────────────────────────────────────────────────────
+function Bookmarks() {
+  const { bookmarks, removeBookmark } = useSpiritualContext()
+  const [search, setSearch] = useState('')
+  const navigate = useNavigate()
+
+  const filtered = bookmarks.filter(b =>
+    !search ||
+    b.bookName?.toLowerCase().includes(search.toLowerCase()) ||
+    b.text?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  if (bookmarks.length === 0) {
+    return (
+      <div className="card text-center py-12">
+        <Bookmark size={32} className="text-slate-700 mx-auto mb-3" />
+        <p className="text-slate-400 font-medium text-sm">Aucun signet enregistré</p>
+        <p className="text-slate-600 text-xs mt-1">Appuyez sur un verset dans la Bible puis "Ajouter signet"</p>
+        <button onClick={() => navigate('/bible')} className="btn-primary mt-4 text-sm">Ouvrir la Bible</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+        <input type="text" placeholder="Rechercher dans les signets..."
+          value={search} onChange={e => setSearch(e.target.value)}
+          className="input pl-10 text-sm" />
+      </div>
+      <p className="text-xs text-slate-600">{filtered.length} signet{filtered.length > 1 ? 's' : ''}</p>
+      <AnimatePresence>
+        {filtered.map(bm => (
+          <motion.div key={bm.id}
+            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
+            className="card hover:border-navy-500 transition-all"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
+                <Bookmark size={14} className="text-gold-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-gold-500 mb-1">
+                  {bm.bookName} {bm.chapter}:{bm.verse}
+                </p>
+                <p className="text-sm text-slate-300 leading-relaxed line-clamp-3 italic">« {bm.text} »</p>
+                <p className="text-xs text-slate-600 mt-1.5">
+                  {format(parseISO(bm.date + 'T00:00:00'), 'd MMM yyyy', { locale: fr })}
+                </p>
+              </div>
+              <button onClick={() => removeBookmark(bm.id)}
+                className="text-slate-700 hover:text-red-400 transition-colors p-1.5 flex-shrink-0">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Page principale ───────────────────────────────────────────────────────────
+const TOOLS = [
+  { id: 'plans',    label: 'Plans de lecture',       icon: Target,     color: 'text-gold-400',    desc: '5 plans pour lire la Bible méthodiquement' },
+  { id: 'bookmarks', label: 'Signets',               icon: BookMarked, color: 'text-spirit-400',  desc: 'Vos versets favoris enregistrés' },
+  { id: 'themes',   label: 'Méditations thématiques',icon: Lightbulb,  color: 'text-blue-400',    desc: 'Versets groupés par thème : paix, force, pardon...' },
+  { id: 'exam',     label: 'Examen de conscience',   icon: Brain,      color: 'text-red-400',     desc: 'Préparer sa confession et renouveler son cœur' },
+]
+
+export default function Outils() {
+  const [active, setActive] = useState(null)
+  const tool = TOOLS.find(t => t.id === active)
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-100">Outils spirituels</h1>
+        <p className="text-slate-500 text-sm mt-0.5">Plans, signets, méditations et examen de conscience</p>
+      </div>
+
+      {/* Tool selector */}
+      {!active && (
+        <motion.div initial="hidden" animate="visible" className="space-y-2">
+          {TOOLS.map((t, i) => {
+            const Icon = t.icon
+            return (
+              <motion.button key={t.id} variants={fadeUp} custom={i}
+                onClick={() => setActive(t.id)}
+                className="w-full card flex items-center gap-4 text-left hover:border-navy-500 transition-all group min-h-[64px]"
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  t.color.replace('text-', 'bg-').replace('400', '500/10')
+                }`}>
+                  <Icon size={18} className={t.color} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-200 text-sm">{t.label}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{t.desc}</p>
+                </div>
+                <ChevronRight size={16} className="text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
+              </motion.button>
+            )
+          })}
+        </motion.div>
+      )}
+
+      {/* Active tool */}
+      <AnimatePresence>
+        {active && tool && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <button onClick={() => setActive(null)}
+              className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300 transition-colors mb-4">
+              <ChevronRight size={14} className="rotate-180" /> Retour aux outils
+            </button>
+            <h2 className="section-title mb-4 flex items-center gap-2">
+              {(() => { const Icon = tool.icon; return <Icon size={18} className={tool.color} /> })()}
+              {tool.label}
+            </h2>
+            {active === 'plans'     && <ReadingPlans />}
+            {active === 'bookmarks' && <Bookmarks />}
+            {active === 'themes'    && <MeditationThemes />}
+            {active === 'exam'      && <ExaminationOfConscience />}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
