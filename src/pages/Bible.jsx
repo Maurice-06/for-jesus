@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, ChevronLeft, ChevronRight, Search, Bookmark, BookmarkCheck,
@@ -6,6 +7,7 @@ import {
 } from 'lucide-react'
 import { OLD_TESTAMENT, NEW_TESTAMENT, ALL_BOOKS, parseReference } from '../data/bibleBooks'
 import { useSpiritualContext } from '../context/SpiritualContext'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 // ─── Traductions disponibles ───────────────────────────────────────────────────
 const TRANSLATIONS = [
@@ -17,24 +19,27 @@ const TRANSLATIONS = [
   { id: 'kjv',    label: '🇬🇧 KJV — King James',           lang: 'en', api: 'bible-api' },
 ]
 
+// Le texte reçu peut contenir des balises (<br>, <S>…) : on n'affiche que du texte brut
+const stripTags = (t) => String(t || '').replace(/<S>\d+<\/S>/gi, '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+
 // ─── Fetching ──────────────────────────────────────────────────────────────────
-async function fetchChapterData(bookId, bookIndex, chapter, translationId) {
+async function fetchChapterData(bookId, bookIndex, chapter, translationId, signal) {
   const trans = TRANSLATIONS.find(t => t.id === translationId)
   const bookNum = bookIndex + 1 // canonical 1-66
 
   if (trans?.api === 'bolls') {
     const url = `https://bolls.life/get-chapter/${translationId}/${bookNum}/${chapter}/`
-    const res = await fetch(url)
+    const res = await fetch(url, { signal, referrerPolicy: 'no-referrer' })
     if (!res.ok) throw new Error(`Erreur réseau (${res.status}) — réessayez`)
     const data = await res.json()
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('Ce chapitre est introuvable dans cette traduction.')
     }
-    return data.map(v => ({ verse: v.verse, text: (v.text || '').trim() }))
+    return data.map(v => ({ verse: v.verse, text: stripTags(v.text) }))
   } else {
     // bible-api.com for English translations
     const url = `https://bible-api.com/${bookId}+${chapter}?translation=${translationId}`
-    const res = await fetch(url)
+    const res = await fetch(url, { signal, referrerPolicy: 'no-referrer' })
     if (!res.ok) throw new Error(`Erreur réseau (${res.status}) — réessayez`)
     const data = await res.json()
     if (data.error) throw new Error(data.error)
@@ -92,9 +97,23 @@ function BookSelector({ selected, onSelect, onClose }) {
 export default function Bible() {
   const { markBibleRead, addBookmark, isBookmarked, readingProgress } = useSpiritualContext()
 
-  const [selectedBook, setSelectedBook] = useState(NEW_TESTAMENT[3]) // Jean (John)
-  const [chapter, setChapter] = useState(3)
-  const [translation, setTranslation] = useState('FRLSG')
+  const { removeBookmarkAt, unmarkBibleRead } = useSpiritualContext()
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Reprend là où l'on s'était arrêté (ou ce que demande l'URL : /bible?livre=john&ch=3)
+  const [last, setLast] = useLocalStorage('fj_bibleLast', null)
+  const initial = (() => {
+    const fromUrl = ALL_BOOKS.find(b => b.id === searchParams.get('livre'))
+    const urlCh = parseInt(searchParams.get('ch'), 10)
+    if (fromUrl) return { book: fromUrl, chapter: urlCh >= 1 && urlCh <= fromUrl.chapters ? urlCh : 1 }
+    const saved = ALL_BOOKS.find(b => b.id === last?.bookId)
+    if (saved && last.chapter >= 1 && last.chapter <= saved.chapters) return { book: saved, chapter: last.chapter }
+    return { book: NEW_TESTAMENT[3], chapter: 3 } // Jean 3
+  })()
+  const [selectedBook, setSelectedBook] = useState(initial.book)
+  const [chapter, setChapter] = useState(initial.chapter)
+  const [translation, setTranslation] = useState(
+    TRANSLATIONS.some(t => t.id === last?.translation) ? last.translation : 'FRLSG'
+  )
   const [verses, setVerses] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -110,33 +129,42 @@ export default function Bible() {
   const bookIndex = ALL_BOOKS.findIndex(b => b.id === selectedBook.id)
   const isRead = readingProgress[`${selectedBook.id}-${chapter}`]
 
-  const loadChapter = async (book, chap, trans) => {
+  const [reloadKey, setReloadKey] = useState(0)
+
+  // Chargement : la requête précédente est annulée si l'on change de chapitre
+  // avant la réponse (sinon un ancien chapitre pouvait s'afficher).
+  useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
     setVerses([])
-    try {
-      const idx = ALL_BOOKS.findIndex(b => b.id === book.id)
-      const result = await fetchChapterData(book.id, idx, chap, trans)
-      setVerses(result)
-    } catch (err) {
-      setError(err.message || 'Impossible de charger ce chapitre.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadChapter(selectedBook, chapter, translation)
     setSelectedVerse(null)
-    setHighlightVerse(null)
+    fetchChapterData(selectedBook.id, bookIndex, chapter, translation, controller.signal)
+      .then(result => { if (!controller.signal.aborted) setVerses(result) })
+      .catch(err => {
+        if (err.name === 'AbortError') return
+        setError(navigator.onLine === false
+          ? 'Pas de connexion internet. Les chapitres déjà lus restent disponibles hors ligne.'
+          : (err.message || 'Impossible de charger ce chapitre.'))
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+    return () => controller.abort()
+  }, [selectedBook, chapter, translation, reloadKey, bookIndex])
+
+  // Mémorise la position de lecture et nettoie l'URL
+  useEffect(() => {
+    setLast({ bookId: selectedBook.id, chapter, translation })
+    if (searchParams.has('livre')) setSearchParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBook, chapter, translation])
 
   // Scroll to highlighted verse
   useEffect(() => {
     if (highlightVerse && verseRefs.current[highlightVerse]) {
-      setTimeout(() => {
+      const t = setTimeout(() => {
         verseRefs.current[highlightVerse]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 400)
+      return () => clearTimeout(t)
     }
   }, [highlightVerse, verses])
 
@@ -172,7 +200,7 @@ export default function Bible() {
 
   const handleCopyVerse = (v) => {
     const text = `« ${v.text} » — ${selectedBook.name} ${chapter}:${v.verse}`
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard?.writeText(text).then(() => {
       setCopied(v.verse)
       setTimeout(() => setCopied(false), 2000)
     }).catch(() => {})
@@ -205,7 +233,7 @@ export default function Bible() {
             >
               <BookSelector
                 selected={selectedBook}
-                onSelect={(b) => { setSelectedBook(b); setChapter(1) }}
+                onSelect={(b) => { setSelectedBook(b); setChapter(1); setHighlightVerse(null) }}
                 onClose={() => setShowBookSelector(false)}
               />
             </motion.div>
@@ -304,7 +332,8 @@ export default function Bible() {
         <p className="text-sm text-slate-500">
           {selectedBook.name} {chapter}/{selectedBook.chapters}
         </p>
-        <button onClick={() => markBibleRead(selectedBook.id, chapter)}
+        <button onClick={() => isRead ? unmarkBibleRead(selectedBook.id, chapter) : markBibleRead(selectedBook.id, chapter)}
+          aria-pressed={!!isRead}
           className={`flex items-center gap-2 text-xs px-3 py-2 rounded-xl transition-all min-h-[36px] ${
             isRead
               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -328,7 +357,7 @@ export default function Bible() {
           <div className="flex flex-col items-center justify-center h-48 gap-3 px-4 text-center">
             <AlertCircle size={28} className="text-red-400" />
             <p className="text-slate-400 text-sm">{error}</p>
-            <button onClick={() => loadChapter(selectedBook, chapter, translation)} className="btn-secondary text-sm">
+            <button onClick={() => setReloadKey(k => k + 1)} className="btn-secondary text-sm">
               Réessayer
             </button>
           </div>
@@ -380,9 +409,9 @@ export default function Bible() {
                     <button
                       onClick={() => {
                         const v = verses.find(v => v.verse === selectedVerse)
-                        if (v && !isBookmarked(selectedBook.id, chapter, v.verse)) {
-                          addBookmark(selectedBook.id, selectedBook.name, chapter, v.verse, v.text)
-                        }
+                        if (!v) return
+                        if (isBookmarked(selectedBook.id, chapter, v.verse)) removeBookmarkAt(selectedBook.id, chapter, v.verse)
+                        else addBookmark(selectedBook.id, selectedBook.name, chapter, v.verse, v.text)
                         setSelectedVerse(null)
                       }}
                       className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border transition-all min-h-[36px] ${
@@ -392,7 +421,7 @@ export default function Bible() {
                       }`}
                     >
                       {isBookmarked(selectedBook.id, chapter, selectedVerse)
-                        ? <><BookmarkCheck size={12} /> Signet</>
+                        ? <><BookmarkCheck size={12} /> Retirer le signet</>
                         : <><Bookmark size={12} /> Ajouter</>}
                     </button>
                     <button

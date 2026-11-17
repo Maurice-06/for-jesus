@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Heart, BookOpen, Flame, Star, ChevronRight, CheckCircle2, Circle, Sparkles, AlertCircle, Info } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
@@ -34,7 +33,8 @@ function DailyCheckItem({ done, label, icon: Icon, onCheck, linkTo }) {
       <button
         onClick={onCheck}
         disabled={done}
-        className={`flex-shrink-0 transition-all duration-200 ${done ? 'text-emerald-400' : 'text-slate-500 hover:text-gold-400'}`}
+        aria-label={done ? `${label} — fait` : label}
+        className={`flex-shrink-0 min-w-[40px] min-h-[40px] -m-2 flex items-center justify-center transition-all duration-200 ${done ? 'text-emerald-400' : 'text-slate-500 hover:text-gold-400'}`}
       >
         {done ? <CheckCircle2 size={22} /> : <Circle size={22} />}
       </button>
@@ -43,7 +43,7 @@ function DailyCheckItem({ done, label, icon: Icon, onCheck, linkTo }) {
         {label}
       </span>
       {!done && (
-        <Link to={linkTo} className="text-xs text-gold-500 hover:text-gold-400 transition-colors">
+        <Link to={linkTo} className="text-xs text-gold-500 hover:text-gold-400 transition-colors py-2 px-1">
           Faire <ChevronRight size={12} className="inline" />
         </Link>
       )}
@@ -52,18 +52,20 @@ function DailyCheckItem({ done, label, icon: Icon, onCheck, linkTo }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const { getTodayLog, markPrayed, prayerStreak, readingStreak, getWeeklyStats, getEncouragementMessage, prayerRequests, totalChaptersRead } = useSpiritualContext()
   const todayLog = getTodayLog()
   const weeklyStats = getWeeklyStats()
   const encourage = getEncouragementMessage()
 
   // Daily verse rotation based on day of year
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+  const now = new Date()
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000)
   const dailyVerse = DAILY_VERSES[dayOfYear % DAILY_VERSES.length]
 
   const activePrayers = prayerRequests.filter(r => !r.answered).length
 
-  const encourageIcon = {
+  const EncourageIcon = {
     alert: AlertCircle,
     info: Info,
     success: Sparkles,
@@ -100,7 +102,7 @@ export default function Dashboard() {
       {/* Encouragement banner */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
         <div className={`flex items-start gap-3 p-4 rounded-xl border ${encourageStyle}`}>
-          <encourageIcon size={18} className="flex-shrink-0 mt-0.5" />
+          <EncourageIcon size={18} className="flex-shrink-0 mt-0.5" />
           <p className="text-sm leading-relaxed">{encourage.message}</p>
         </div>
       </motion.div>
@@ -131,14 +133,14 @@ export default function Dashboard() {
             done={todayLog.prayed}
             label="J'ai prié aujourd'hui"
             icon={Heart}
-            onCheck={() => markPrayed(10)}
+            onCheck={() => markPrayed(0)}
             linkTo="/priere"
           />
           <DailyCheckItem
             done={todayLog.bibleRead}
             label="J'ai lu la Bible aujourd'hui"
             icon={BookOpen}
-            onCheck={() => {}}
+            onCheck={() => navigate('/bible')}
             linkTo="/bible"
           />
         </div>

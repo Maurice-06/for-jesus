@@ -60,51 +60,57 @@ export const READING_PLANS = [
   {
     id: 'bible-1an',
     name: 'Bible en 1 an',
-    description: '3-4 chapitres par jour — parcourez toute la Parole de Dieu',
-    duration: '365 jours',
+    description: '3 à 4 chapitres par jour — parcourez toute la Parole de Dieu',
+    days: 365,
     icon: '📖',
     color: 'text-gold-400 bg-gold-500/10 border-gold-500/20',
     chapters: PLAN_BIBLE_1AN,
-    dailyCount: 3,
   },
   {
     id: 'nt-90',
     name: 'Nouveau Testament en 90 jours',
     description: '2-3 chapitres par jour — plongez dans la vie et l\'enseignement de Jésus',
-    duration: '90 jours',
+    days: 90,
     icon: '✝️',
     color: 'text-spirit-400 bg-spirit-500/10 border-spirit-500/20',
     chapters: PLAN_NT_90,
-    dailyCount: 3,
   },
   {
     id: 'psaumes-30',
     name: 'Psaumes en 30 jours',
     description: '5 psaumes par jour — priez avec les mots inspirés de David',
-    duration: '30 jours',
+    days: 30,
     icon: '🎵',
     color: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
     chapters: PLAN_PSAUMES_30,
-    dailyCount: 5,
   },
   {
     id: 'evangiles-40',
     name: 'Évangiles en 40 jours',
-    description: '2 chapitres par jour — suivez Jésus de sa naissance à sa résurrection',
-    duration: '40 jours',
+    description: '2 à 3 chapitres par jour — suivez Jésus de sa naissance à sa résurrection',
+    days: 40,
     icon: '🕊️',
     color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
     chapters: PLAN_EVANGILES_40,
-    dailyCount: 2,
   },
   {
     id: 'proverbes-31',
     name: 'Proverbes en 31 jours',
     description: '1 chapitre par jour — un mois de sagesse divine pour votre vie',
-    duration: '31 jours',
+    days: 31,
     icon: '💡',
     color: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
     chapters: PLAN_PROVERBES_31,
-    dailyCount: 1,
   },
 ]
+
+// Nombre de chapitres prévus à la fin du jour n° dayIndex (0 = premier jour).
+// Répartition régulière : le plan se termine exactement en `days` jours.
+export const expectedByDay = (plan, dayIndex) =>
+  Math.min(plan.chapters.length, Math.round(((dayIndex + 1) * plan.chapters.length) / plan.days))
+
+export const chaptersPerDay = (plan) => {
+  const avg = plan.chapters.length / plan.days
+  const lo = Math.floor(avg), hi = Math.ceil(avg)
+  return lo === hi ? `${lo}` : `${lo} à ${hi}`
+}

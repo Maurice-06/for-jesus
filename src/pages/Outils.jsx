@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookMarked, Target, Brain, Lightbulb, ChevronRight, ChevronDown,
-  CheckCircle2, Circle, Play, RotateCcw, Bookmark, Trash2, X, Search, AlertTriangle
+  CheckCircle2, Circle, Play, RotateCcw, Bookmark, Trash2, X, Search, AlertTriangle, TrendingUp, Save
 } from 'lucide-react'
-import { READING_PLANS } from '../data/readingPlans'
+import { READING_PLANS, expectedByDay, chaptersPerDay } from '../data/readingPlans'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, differenceInCalendarDays } from 'date-fns'
+import ConfirmButton from '../components/ConfirmButton'
+import { exportBackup, importBackup, requestPersistentStorage } from '../utils/backup'
 import { fr } from 'date-fns/locale'
 
 const fadeUp = {
@@ -28,7 +30,7 @@ function ReadingPlans() {
 
   const startPlan = (planId) => {
     setActivePlanId(planId)
-    setPlanStartDate(new Date().toISOString())
+    setPlanStartDate(format(new Date(), 'yyyy-MM-dd'))
   }
 
   const stopPlan = () => {
@@ -41,20 +43,26 @@ function ReadingPlans() {
     return { done, total: plan.chapters.length, pct: Math.round((done / plan.chapters.length) * 100) }
   }
 
-  // Today's reading for the active plan
-  const getTodaysReading = () => {
-    if (!activePlan || !planStartDate) return []
-    const daysSinceStart = Math.floor((Date.now() - new Date(planStartDate)) / 86400000)
-    const start = daysSinceStart * activePlan.dailyCount
-    return activePlan.chapters.slice(start, start + activePlan.dailyCount)
-  }
-
-  const todaysReading = getTodaysReading()
+  // Lecture du jour : les prochains chapitres non lus du plan, dans l'ordre.
+  // Un jour manqué ne fait rien « sauter » : on reprend simplement là où l'on s'est arrêté.
+  const planStatus = (() => {
+    if (!activePlan || !planStartDate) return null
+    const dayIndex = Math.max(0, differenceInCalendarDays(new Date(), parseISO(planStartDate)))
+    const { done, total } = getPlanProgress(activePlan)
+    // Retard = ce qui était prévu jusqu'à hier (la lecture du jour n'est pas encore « en retard »)
+    const target = dayIndex > 0 ? expectedByDay(activePlan, dayIndex - 1) : 0
+    const quota = Math.ceil(activePlan.chapters.length / activePlan.days)
+    const next = activePlan.chapters.filter(c => !readingProgress[c.key]).slice(0, quota)
+    // Chapitres prévus aujourd'hui déjà lus aujourd'hui → on les montre cochés
+    const readToday = activePlan.chapters.filter(c => readingProgress[c.key] === format(new Date(), 'yyyy-MM-dd'))
+    return { dayIndex, done, total, target, behind: Math.max(0, target - done), next, readToday, finished: done >= total }
+  })()
+  const todaysReading = planStatus ? [...planStatus.readToday, ...planStatus.next].slice(0, Math.max(planStatus.readToday.length, Math.ceil(activePlan.chapters.length / activePlan.days))) : []
 
   return (
     <div className="space-y-4">
       {/* Today's reading */}
-      {activePlan && todaysReading.length > 0 && (
+      {activePlan && planStatus && (
         <div className={`card border ${activePlan.color}`}>
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider opacity-80 flex items-center gap-1.5">
@@ -62,6 +70,16 @@ function ReadingPlans() {
             </p>
             <span className={`badge border text-xs ${activePlan.color}`}>{activePlan.icon} {activePlan.name}</span>
           </div>
+          {planStatus.finished ? (
+            <p className="text-sm text-emerald-400 py-2">🎉 Plan terminé ! Gloire à Dieu pour votre persévérance.</p>
+          ) : (
+            <p className="text-xs text-slate-500 mb-3">
+              Jour {planStatus.dayIndex + 1} / {activePlan.days} ·{' '}
+              {planStatus.behind === 0
+                ? <span className="text-emerald-400">à jour ✓</span>
+                : <span>{planStatus.behind} chapitre{planStatus.behind > 1 ? 's' : ''} de retard — pas d'inquiétude, avancez à votre rythme.</span>}
+            </p>
+          )}
           <div className="space-y-2">
             {todaysReading.map(ch => {
               const done = readingProgress[ch.key]
@@ -78,8 +96,8 @@ function ReadingPlans() {
                   </span>
                   {!done && (
                     <button
-                      onClick={() => navigate(`/bible`)}
-                      className="text-xs text-gold-500 hover:text-gold-400 flex items-center gap-1"
+                      onClick={() => navigate(`/bible?livre=${ch.bookId}&ch=${ch.chapter}`)}
+                      className="text-xs text-gold-500 hover:text-gold-400 flex items-center gap-1 min-h-[40px] px-2"
                     >
                       Lire <ChevronRight size={12} />
                     </button>
@@ -102,9 +120,10 @@ function ReadingPlans() {
               </>
             )})()}
           </div>
-          <button onClick={stopPlan} className="mt-3 text-xs text-slate-600 hover:text-red-400 flex items-center gap-1 transition-colors">
-            <X size={11} /> Abandonner ce plan
-          </button>
+          <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+            <ConfirmButton onConfirm={stopPlan} label="Arrêter ce plan" size={13} />
+            <span>Arrêter ce plan (vos chapitres lus restent comptés)</span>
+          </div>
         </div>
       )}
 
@@ -125,7 +144,7 @@ function ReadingPlans() {
                     <h3 className="font-semibold text-slate-200 text-sm">{plan.name}</h3>
                     {isActive && <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">Actif</span>}
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{plan.duration}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{plan.days} jours</p>
                   {prog.done > 0 && (
                     <div className="mt-2 h-1 bg-navy-900 rounded-full overflow-hidden w-32">
                       <div className="h-full rounded-full bg-gold-400" style={{ width: `${prog.pct}%` }} />
@@ -139,7 +158,7 @@ function ReadingPlans() {
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden">
                     <p className="text-sm text-slate-400 leading-relaxed mt-3 mb-3">{plan.description}</p>
-                    <p className="text-xs text-slate-500 mb-3">{plan.chapters.length} chapitres · {plan.dailyCount} ch/jour</p>
+                    <p className="text-xs text-slate-500 mb-3">{plan.chapters.length} chapitres · {chaptersPerDay(plan)} ch/jour</p>
                     {!isActive ? (
                       <button onClick={() => startPlan(plan.id)} className="btn-primary text-sm flex items-center gap-2">
                         <Play size={13} /> Commencer ce plan
@@ -430,18 +449,16 @@ function Bookmarks() {
                 <Bookmark size={14} className="text-gold-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gold-500 mb-1">
+                <button onClick={() => navigate(`/bible?livre=${bm.bookId}&ch=${bm.chapter}`)}
+                  className="text-xs font-semibold text-gold-500 hover:text-gold-400 mb-1 underline-offset-2 hover:underline">
                   {bm.bookName} {bm.chapter}:{bm.verse}
-                </p>
+                </button>
                 <p className="text-sm text-slate-300 leading-relaxed line-clamp-3 italic">« {bm.text} »</p>
                 <p className="text-xs text-slate-600 mt-1.5">
                   {format(parseISO(bm.date + 'T00:00:00'), 'd MMM yyyy', { locale: fr })}
                 </p>
               </div>
-              <button onClick={() => removeBookmark(bm.id)}
-                className="text-slate-700 hover:text-red-400 transition-colors p-1.5 flex-shrink-0">
-                <Trash2 size={14} />
-              </button>
+              <ConfirmButton onConfirm={() => removeBookmark(bm.id)} label="Retirer" size={15} />
             </div>
           </motion.div>
         ))}
@@ -450,16 +467,70 @@ function Bookmarks() {
   )
 }
 
+// ─── Sauvegarde ────────────────────────────────────────────────────────────────
+function Backup() {
+  const [status, setStatus] = useState(null) // { ok: bool, msg: string }
+  const [persisted, setPersisted] = useState(null)
+
+  const protect = async () => setPersisted(await requestPersistentStorage())
+
+  const onImport = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const n = await importBackup(file)
+      setStatus({ ok: true, msg: `Sauvegarde restaurée (${n} catégories de données).` })
+    } catch (err) {
+      setStatus({ ok: false, msg: err.message })
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="card-glass text-sm text-slate-400 leading-relaxed">
+        Vos données (journal, prières, progression) restent <span className="text-slate-200">uniquement sur ce téléphone</span>.
+        Faites une sauvegarde de temps en temps : elle vous permet de tout retrouver si vous changez d'appareil
+        ou si le navigateur efface ses données.
+      </div>
+      <button onClick={() => { exportBackup(); setStatus({ ok: true, msg: 'Fichier de sauvegarde téléchargé.' }) }}
+        className="btn-primary w-full min-h-[48px]">
+        Télécharger ma sauvegarde
+      </button>
+      <label className="btn-secondary w-full min-h-[48px] flex items-center justify-center cursor-pointer">
+        Restaurer une sauvegarde
+        <input type="file" accept="application/json,.json" onChange={onImport} className="sr-only" />
+      </label>
+      <button onClick={protect} className="btn-secondary w-full min-h-[48px]">
+        Protéger mes données contre l'effacement automatique
+      </button>
+      {persisted !== null && (
+        <p className={`text-xs ${persisted ? 'text-emerald-400' : 'text-amber-400'}`}>
+          {persisted
+            ? 'Protection activée ✓'
+            : "Le navigateur n'a pas accordé la protection. Sur iPhone, ajoutez l'appli à l'écran d'accueil (Partager → Sur l'écran d'accueil)."}
+        </p>
+      )}
+      {status && (
+        <p role="status" className={`text-sm ${status.ok ? 'text-emerald-400' : 'text-red-400'}`}>{status.msg}</p>
+      )}
+    </div>
+  )
+}
+
 // ─── Page principale ───────────────────────────────────────────────────────────
 const TOOLS = [
+  { id: 'progress', label: 'Mes progrès',            icon: TrendingUp, color: 'text-emerald-400', desc: 'Séries, calendrier et objectifs', to: '/progres' },
   { id: 'plans',    label: 'Plans de lecture',       icon: Target,     color: 'text-gold-400',    desc: '5 plans pour lire la Bible méthodiquement' },
   { id: 'bookmarks', label: 'Signets',               icon: BookMarked, color: 'text-spirit-400',  desc: 'Vos versets favoris enregistrés' },
   { id: 'themes',   label: 'Méditations thématiques',icon: Lightbulb,  color: 'text-blue-400',    desc: 'Versets groupés par thème : paix, force, pardon...' },
   { id: 'exam',     label: 'Examen de conscience',   icon: Brain,      color: 'text-red-400',     desc: 'Préparer sa confession et renouveler son cœur' },
+  { id: 'backup',   label: 'Sauvegarde',             icon: Save,       color: 'text-blue-400',    desc: 'Exporter ou restaurer vos données' },
 ]
 
 export default function Outils() {
   const [active, setActive] = useState(null)
+  const navigate = useNavigate()
   const tool = TOOLS.find(t => t.id === active)
 
   return (
@@ -476,7 +547,7 @@ export default function Outils() {
             const Icon = t.icon
             return (
               <motion.button key={t.id} variants={fadeUp} custom={i}
-                onClick={() => setActive(t.id)}
+                onClick={() => t.to ? navigate(t.to) : setActive(t.id)}
                 className="w-full card flex items-center gap-4 text-left hover:border-navy-500 transition-all group min-h-[64px]"
               >
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
@@ -511,6 +582,7 @@ export default function Outils() {
             {active === 'bookmarks' && <Bookmarks />}
             {active === 'themes'    && <MeditationThemes />}
             {active === 'exam'      && <ExaminationOfConscience />}
+            {active === 'backup'    && <Backup />}
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useSpiritualContext } from '../context/SpiritualContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle2, Circle, X, BookOpen } from 'lucide-react'
 
@@ -104,12 +105,26 @@ const DIVINE_MERCY_STEPS = [
 ]
 
 // ─── Utilitaires ──────────────────────────────────────────────────────────────
+// Lundi & samedi : joyeux · mardi & vendredi : douloureux · jeudi : lumineux · mercredi & dimanche : glorieux
 function getTodayMystery() {
-  const day = new Date().getDay() // 0=dim
+  const day = new Date().getDay() // 0 = dimanche
   if (day === 1 || day === 6) return 'joyeux'
   if (day === 2 || day === 5) return 'douloureux'
-  if (day === 3) return 'lumineux'
-  return 'glorieux' // 0=dim, 4=jeu→lumineux
+  if (day === 4) return 'lumineux'
+  return 'glorieux'
+}
+
+// Enregistre la prière à la fin du chapelet, avec la durée réelle
+function useCompletion(estimatedMinutes) {
+  const { markPrayed } = useSpiritualContext()
+  const startedAt = useRef(Date.now())
+  const restart = () => { startedAt.current = Date.now() }
+  const complete = () => {
+    const elapsed = Math.round((Date.now() - startedAt.current) / 60000)
+    // Si l'appli est restée ouverte très longtemps, on retient une durée plausible
+    markPrayed(elapsed >= 1 && elapsed <= estimatedMinutes * 3 ? elapsed : estimatedMinutes)
+  }
+  return { restart, complete }
 }
 
 // ─── Composants ───────────────────────────────────────────────────────────────
@@ -149,8 +164,9 @@ function Rosaire() {
   const [mysteryIdx, setMysteryIdx] = useState(0)
   const [aveMarias, setAveMarias] = useState(0) // count within current mystery
   const [finished, setFinished] = useState(false)
+  const { restart, complete } = useCompletion(20)
 
-  const reset = () => { setStep('opening'); setSubStep(0); setMysteryIdx(0); setAveMarias(0); setFinished(false) }
+  const reset = () => { setStep('opening'); setSubStep(0); setMysteryIdx(0); setAveMarias(0); setFinished(false); restart() }
 
   // Opening: credo, notre pere, 3 je vous salue, gloire
   const OPENING_STEPS = [
@@ -202,7 +218,7 @@ function Rosaire() {
       }
     } else if (step === 'closing') {
       if (subStep < CLOSING_STEPS.length - 1) setSubStep(s => s + 1)
-      else setFinished(true)
+      else { setFinished(true); complete() }
     }
   }
 
@@ -264,7 +280,7 @@ function Rosaire() {
         <div className="text-5xl mb-2">🌹</div>
         <h3 className="text-xl font-serif font-semibold text-slate-100">Chapelet terminé</h3>
         <p className="text-slate-400 text-sm max-w-xs mx-auto">
-          Vous avez prié le chapelet du Rosaire avec {mystery.list.length} {mystery.label.toLowerCase()}. Que Marie vous accompagne dans votre journée.
+          Vous avez prié le chapelet avec les {mystery.label.toLowerCase()}. Votre prière a été enregistrée. Que Marie vous accompagne dans votre journée.
         </p>
         <button onClick={reset} className="btn-primary flex items-center gap-2 mx-auto">
           <RotateCcw size={15} /> Recommencer
@@ -295,7 +311,7 @@ function Rosaire() {
         ))}
       </div>
       <p className="text-xs text-slate-600 text-center">
-        Aujourd'hui recommandé : <span className={`font-medium ${mystery.textColor}`}>{mystery.label}</span>
+        Aujourd'hui recommandé : <span className={`font-medium ${MYSTERIES[suggested].textColor}`}>{MYSTERIES[suggested].label}</span>
       </p>
 
       {/* Progress bar */}
@@ -374,8 +390,9 @@ function DivineMercy() {
   const [mercyCount, setMercyCount] = useState(0)
   const [finished, setFinished] = useState(false)
   const step = DIVINE_MERCY_STEPS[stepIdx]
+  const { restart, complete } = useCompletion(10)
 
-  const reset = () => { setStepIdx(0); setMercyCount(0); setFinished(false) }
+  const reset = () => { setStepIdx(0); setMercyCount(0); setFinished(false); restart() }
 
   const advance = () => {
     if (step.type === 'decade') {
@@ -386,7 +403,7 @@ function DivineMercy() {
       setMercyCount(0)
     }
     if (stepIdx < DIVINE_MERCY_STEPS.length - 1) setStepIdx(s => s + 1)
-    else setFinished(true)
+    else { setFinished(true); complete() }
   }
 
   const back = () => {

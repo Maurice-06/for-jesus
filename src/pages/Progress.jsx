@@ -9,7 +9,8 @@ import {
   Calendar, ChevronRight, Award, Zap
 } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
-import { TOTAL_CHAPTERS, ALL_BOOKS } from '../data/bibleBooks'
+import { TOTAL_CHAPTERS } from '../data/bibleBooks'
+import { format } from 'date-fns'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -60,7 +61,7 @@ function HeatmapCalendar({ dailyLogs }) {
     for (let d = 0; d < 7; d++) {
       const date = new Date(startDate)
       date.setDate(startDate.getDate() + w * 7 + d)
-      const key = date.toISOString().split('T')[0]
+      const key = format(date, 'yyyy-MM-dd') // date locale (toISOString était en UTC → décalage d'un jour)
       const log = dailyLogs[key] || {}
       const level = (log.prayed ? 1 : 0) + (log.bibleRead ? 1 : 0)
       week.push({ date: key, level, future: date > today })
@@ -84,6 +85,7 @@ function HeatmapCalendar({ dailyLogs }) {
               <div
                 key={di}
                 title={day.future ? '' : `${day.date} : ${day.level === 2 ? 'Prière + Bible' : day.level === 1 ? 'Partiel' : 'Aucun'}`}
+                aria-label={day.future ? undefined : `${day.date} : ${day.level === 2 ? 'Prière et Bible' : day.level === 1 ? 'Partiel' : 'Aucune activité'}`}
                 className={`w-4 h-4 rounded-sm transition-all ${day.future ? 'bg-navy-800 opacity-30' : colors[day.level]}`}
               />
             ))}
@@ -120,15 +122,6 @@ export default function Progress() {
     'Min. prière': d.prayerMinutes,
     'Chapitres': d.chaptersRead,
   }))
-
-  const pieData = [
-    { name: 'Ancien Testament', value: ALL_BOOKS.slice(0, 39).reduce((s, b) => {
-      for (let c = 1; c <= b.chapters; c++) {
-        if (dailyLogs) {} // access closure
-      }
-      return s
-    }, 0) },
-  ]
 
   const achievements = [
     { icon: Flame, label: 'Série de prière', value: prayerStreak, suffix: 'jours', color: 'text-orange-400', threshold: 7 },

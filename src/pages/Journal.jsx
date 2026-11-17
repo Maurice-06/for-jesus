@@ -5,6 +5,7 @@ import {
   Sun, Cloud, CloudRain, Anchor, Star, Search, Edit3
 } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
+import ConfirmButton from '../components/ConfirmButton'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -68,12 +69,10 @@ function EntryCard({ entry, onDelete, onEdit }) {
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
-          <button onClick={() => onEdit(entry)} className="p-1.5 text-slate-600 hover:text-slate-400 transition-colors rounded-lg hover:bg-navy-700">
-            <Edit3 size={13} />
+          <button onClick={() => onEdit(entry)} aria-label="Modifier" className="min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-600 hover:text-slate-400 transition-colors rounded-lg hover:bg-navy-700">
+            <Edit3 size={15} />
           </button>
-          <button onClick={() => onDelete(entry.id)} className="p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-navy-700">
-            <Trash2 size={13} />
-          </button>
+          <ConfirmButton onConfirm={() => onDelete(entry.id)} size={15} />
         </div>
       </div>
 
@@ -100,7 +99,6 @@ function JournalForm({ initial, onSave, onCancel }) {
   const [verse, setVerse] = useState(initial?.verse || '')
   const [gratitudeInput, setGratitudeInput] = useState('')
   const [gratitude, setGratitude] = useState(initial?.gratitude || [])
-  const [reflection, setReflection] = useState(initial?.reflection || '')
   const prompt = REFLECTION_PROMPTS[new Date().getDate() % REFLECTION_PROMPTS.length]
 
   const addGratitude = () => {
@@ -113,7 +111,7 @@ function JournalForm({ initial, onSave, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!content.trim() && !mood) return
-    onSave({ mood, content, verse, gratitude, reflection })
+    onSave({ mood, content: content.trim(), verse: verse.trim(), gratitude })
   }
 
   return (
@@ -123,7 +121,7 @@ function JournalForm({ initial, onSave, onCancel }) {
     >
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-slate-200">{initial ? 'Modifier' : 'Nouvelle entrée'}</h3>
-        <button onClick={onCancel} className="text-slate-600 hover:text-slate-400"><X size={16} /></button>
+        <button onClick={onCancel} aria-label="Fermer" className="min-w-[40px] min-h-[40px] -m-2 flex items-center justify-center text-slate-600 hover:text-slate-400"><X size={16} /></button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -230,6 +228,7 @@ export default function Journal() {
 
   const filtered = journalEntries.filter(e =>
     !search || e.content?.toLowerCase().includes(search.toLowerCase()) ||
+    MOODS.find(m => m.id === e.mood)?.label.toLowerCase().includes(search.toLowerCase()) ||
     e.verse?.toLowerCase().includes(search.toLowerCase()) ||
     e.gratitude?.some(g => g.toLowerCase().includes(search.toLowerCase()))
   )

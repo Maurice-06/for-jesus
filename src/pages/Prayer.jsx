@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Heart, Plus, CheckCircle2, Trash2, Clock, Tag, ChevronDown, X,
   Flame, Timer, Play, Square, BookOpen, Filter
 } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
+import { useLocalStorage } from '../hooks/useLocalStorage'
+import ConfirmButton from '../components/ConfirmButton'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -39,48 +41,69 @@ const GUIDED_PRAYERS = [
   },
 ]
 
+// Minuteur basé sur l'heure de départ (et non sur un compteur) :
+// il reste juste si l'écran se verrouille, si l'appli passe en arrière-plan
+// ou si l'on change de page. L'heure de départ est sauvegardée.
 function PrayerTimer({ onSave }) {
-  const [running, setRunning] = useState(false)
-  const [seconds, setSeconds] = useState(0)
-  const [intervalId, setIntervalId] = useState(null)
+  const [startedAt, setStartedAt] = useLocalStorage('fj_prayerTimer', null)
+  const [now, setNow] = useState(Date.now())
+  const running = typeof startedAt === 'number'
 
-  const start = () => {
-    setRunning(true)
-    const id = setInterval(() => setSeconds(s => s + 1), 1000)
-    setIntervalId(id)
-  }
-
-  const stop = () => {
-    setRunning(false)
-    clearInterval(intervalId)
-    if (seconds > 0) {
-      onSave(Math.ceil(seconds / 60))
+  useEffect(() => {
+    if (!running) return
+    const tick = () => setNow(Date.now())
+    tick()
+    const id = setInterval(tick, 1000)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', tick)
     }
-    setSeconds(0)
-  }
+  }, [running])
 
-  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+  // Garde-fou : une session oubliée ouverte est plafonnée à 3 h
+  const seconds = running ? Math.min(Math.max(0, Math.floor((now - startedAt) / 1000)), 3 * 3600) : 0
+
+  const start = () => { setNow(Date.now()); setStartedAt(Date.now()) }
+  const stop = () => {
+    if (seconds >= 30) onSave(Math.max(1, Math.round(seconds / 60)))
+    else if (seconds > 0) onSave(0)
+    setStartedAt(null)
+  }
+  const cancel = () => setStartedAt(null)
+
+  const fmt = (s) => {
+    const h = Math.floor(s / 3600)
+    const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
+    const ss = String(s % 60).padStart(2, '0')
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
+  }
 
   return (
     <div className="card text-center space-y-4">
       <p className="text-sm text-slate-500 font-medium">Minuteur de prière</p>
-      <div className="text-4xl font-mono font-bold text-slate-100 tracking-widest">
+      <div className="text-4xl font-mono font-bold text-slate-100 tracking-widest" aria-live="off">
         {fmt(seconds)}
       </div>
       <div className="flex gap-3 justify-center">
         {!running ? (
-          <button onClick={start} className="btn-primary flex items-center gap-2">
+          <button onClick={start} className="btn-primary flex items-center gap-2 min-h-[44px]">
             <Play size={15} /> Commencer
           </button>
         ) : (
-          <button onClick={stop} className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-5 py-2.5 rounded-xl font-semibold transition-all">
-            <Square size={15} /> Terminer
-          </button>
+          <>
+            <button onClick={cancel} className="btn-secondary text-sm min-h-[44px]">Annuler</button>
+            <button onClick={stop} className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-5 py-2.5 rounded-xl font-semibold transition-all min-h-[44px]">
+              <Square size={15} /> Terminer
+            </button>
+          </>
         )}
       </div>
-      {!running && seconds === 0 && (
-        <p className="text-xs text-slate-600">Démarrez et priez — le temps sera enregistré automatiquement.</p>
-      )}
+      <p className="text-xs text-slate-600">
+        {running
+          ? 'Le temps continue même si vous verrouillez votre téléphone.'
+          : 'Démarrez et priez — le temps sera enregistré automatiquement.'}
+      </p>
     </div>
   )
 }
@@ -99,7 +122,8 @@ function RequestCard({ req, onAnswer, onDelete }) {
       <div className="flex items-start gap-3">
         <button
           onClick={() => !req.answered && onAnswer(req.id)}
-          className={`mt-0.5 flex-shrink-0 transition-all duration-200 ${req.answered ? 'text-emerald-400' : 'text-slate-600 hover:text-emerald-400'}`}
+          aria-label={req.answered ? 'Prière exaucée' : 'Marquer comme exaucée'}
+          className={`-m-2 p-2 flex-shrink-0 transition-all duration-200 ${req.answered ? 'text-emerald-400' : 'text-slate-600 hover:text-emerald-400'}`}
         >
           <CheckCircle2 size={20} />
         </button>
@@ -133,9 +157,7 @@ function RequestCard({ req, onAnswer, onDelete }) {
             </>
           )}
         </div>
-        <button onClick={() => onDelete(req.id)} className="text-slate-700 hover:text-red-400 transition-colors p-1 flex-shrink-0">
-          <Trash2 size={14} />
-        </button>
+        <ConfirmButton onConfirm={() => onDelete(req.id)} size={15} />
       </div>
     </motion.div>
   )
@@ -238,7 +260,7 @@ export default function Prayer() {
                       "{GUIDED_PRAYERS[selectedGuided].text}"
                     </p>
                     <button
-                      onClick={() => { markPrayed(5); setSelectedGuided(null) }}
+                      onClick={() => { markPrayed(2); setSelectedGuided(null) }}
                       className="mt-4 btn-primary text-sm w-full"
                     >
                       J'ai prié cette prière

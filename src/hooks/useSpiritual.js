@@ -1,8 +1,20 @@
 import { useLocalStorage } from './useLocalStorage'
-import { format, parseISO, differenceInCalendarDays, subDays } from 'date-fns'
-import { v4 as uuidv4 } from 'uuid'
+import { format, subDays } from 'date-fns'
 
 const today = () => format(new Date(), 'yyyy-MM-dd')
+const EMPTY_LOG = { prayed: false, bibleRead: false, prayerMinutes: 0, chaptersRead: [] }
+
+// crypto.randomUUID n'existe qu'en contexte sécurisé (https / localhost)
+const uuidv4 = () =>
+  (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+
+// Toutes les clés sauvegardées par l'appli (pour l'export / import)
+export const STORAGE_KEYS = [
+  'fj_dailyLogs', 'fj_prayerRequests', 'fj_journalEntries', 'fj_bookmarks',
+  'fj_readingProgress', 'fj_goals', 'fj_activePlan', 'fj_planStart', 'fj_bibleLast',
+]
 
 export function useSpiritual() {
   const [dailyLogs, setDailyLogs] = useLocalStorage('fj_dailyLogs', {})
@@ -13,37 +25,58 @@ export function useSpiritual() {
   const [goals, setGoals] = useLocalStorage('fj_goals', { weeklyPrayerDays: 5, weeklyBibleChapters: 7 })
 
   // --- Daily log helpers ---
-  const getTodayLog = () => dailyLogs[today()] || { prayed: false, bibleRead: false, prayerMinutes: 0, chaptersRead: [] }
+  const getTodayLog = () => ({ ...EMPTY_LOG, ...dailyLogs[today()] })
 
-  const markPrayed = (minutes = 5) => {
+  // minutes = 0 : on note la prière sans inventer de durée
+  const markPrayed = (minutes = 0) => {
     const date = today()
-    setDailyLogs(prev => ({
-      ...prev,
-      [date]: { ...getTodayLog(), prayed: true, prayerMinutes: (prev[date]?.prayerMinutes || 0) + minutes },
-    }))
+    setDailyLogs(prev => {
+      const log = { ...EMPTY_LOG, ...prev[date] }
+      return { ...prev, [date]: { ...log, prayed: true, prayerMinutes: log.prayerMinutes + Math.max(0, Math.round(minutes)) } }
+    })
   }
 
   const markBibleRead = (bookId, chapter) => {
     const date = today()
     const key = `${bookId}-${chapter}`
     setDailyLogs(prev => {
-      const log = prev[date] || { prayed: false, bibleRead: false, prayerMinutes: 0, chaptersRead: [] }
+      const log = { ...EMPTY_LOG, ...prev[date] }
       const chaptersRead = log.chaptersRead.includes(key) ? log.chaptersRead : [...log.chaptersRead, key]
       return { ...prev, [date]: { ...log, bibleRead: true, chaptersRead } }
     })
     setReadingProgress(prev => ({ ...prev, [key]: date }))
   }
 
+  // Annuler un « Marquer lu » fait par erreur
+  const unmarkBibleRead = (bookId, chapter) => {
+    const key = `${bookId}-${chapter}`
+    const readOn = readingProgress[key]
+    setReadingProgress(prev => {
+      const { [key]: _removed, ...rest } = prev
+      return rest
+    })
+    if (readOn) {
+      setDailyLogs(prev => {
+        const log = prev[readOn]
+        if (!log) return prev
+        const chaptersRead = (log.chaptersRead || []).filter(k => k !== key)
+        return { ...prev, [readOn]: { ...log, chaptersRead, bibleRead: chaptersRead.length > 0 } }
+      })
+    }
+  }
+
   // --- Streak calculation ---
+  // La journée en cours n'est pas encore finie : si rien n'est fait aujourd'hui,
+  // la série d'hier reste valable (elle ne retombe pas à 0 chaque matin).
   const calculateStreak = (type) => {
+    const isDone = (d) => {
+      const log = dailyLogs[format(d, 'yyyy-MM-dd')]
+      return !!log && (type === 'prayer' ? log.prayed : log.bibleRead)
+    }
     let streak = 0
     let currentDate = new Date()
-    while (true) {
-      const dateKey = format(currentDate, 'yyyy-MM-dd')
-      const log = dailyLogs[dateKey]
-      if (!log) break
-      const done = type === 'prayer' ? log.prayed : log.bibleRead
-      if (!done) break
+    if (!isDone(currentDate)) currentDate = subDays(currentDate, 1)
+    while (isDone(currentDate)) {
       streak++
       currentDate = subDays(currentDate, 1)
     }
@@ -130,6 +163,10 @@ export function useSpiritual() {
     setBookmarks(prev => prev.filter(b => b.id !== id))
   }
 
+  const removeBookmarkAt = (bookId, chapter, verse) => {
+    setBookmarks(prev => prev.filter(b => !(b.bookId === bookId && b.chapter === chapter && b.verse === verse)))
+  }
+
   const isBookmarked = (bookId, chapter, verse) => {
     return bookmarks.some(b => b.bookId === bookId && b.chapter === chapter && b.verse === verse)
   }
@@ -150,7 +187,7 @@ export function useSpiritual() {
     if (streak >= 7) {
       return { type: 'success', message: `Incroyable ! ${streak} jours consécutifs de fidélité. Continuez ainsi !` }
     }
-    return { type: 'success', message: "Excellent ! Vous avez prié et lu la Bible aujourd'hui. Dieu est fier de vous !" }
+    return { type: 'success', message: "Excellent ! Vous avez prié et lu la Parole aujourd'hui. Que Dieu vous bénisse !" }
   }
 
   return {
@@ -159,7 +196,7 @@ export function useSpiritual() {
     // Computed
     prayerStreak, readingStreak, totalChaptersRead,
     // Daily log
-    getTodayLog, markPrayed, markBibleRead,
+    getTodayLog, markPrayed, markBibleRead, unmarkBibleRead,
     // Stats
     getLast30Days, getLast7Days, getWeeklyStats,
     // Prayer requests
@@ -167,7 +204,7 @@ export function useSpiritual() {
     // Journal
     addJournalEntry, updateJournalEntry, deleteJournalEntry, getTodayJournal,
     // Bookmarks
-    addBookmark, removeBookmark, isBookmarked,
+    addBookmark, removeBookmark, removeBookmarkAt, isBookmarked,
     // Goals
     setGoals,
     // UX
