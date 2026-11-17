@@ -1,44 +1,40 @@
-import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, Heart, Orbit, NotebookPen, Wrench } from 'lucide-react'
-
-// 6 items compact — Progrès accessible via Outils sur mobile
-const navItems = [
-  { to: '/', label: 'Accueil', icon: LayoutDashboard },
-  { to: '/bible', label: 'Bible', icon: BookOpen },
-  { to: '/priere', label: 'Prière', icon: Heart },
-  { to: '/chapelet', label: 'Chapelet', icon: Orbit },
-  { to: '/journal', label: 'Journal', icon: NotebookPen },
-  { to: '/outils', label: 'Outils', icon: Wrench },
-]
+import { NavLink, useLocation } from 'react-router-dom'
+import Icon3D from './Icon3D'
+import { NAV_ITEMS } from './navItems'
+import { useSpiritualContext } from '../context/SpiritualContext'
 
 export default function BottomNav() {
+  const { pathname } = useLocation()
+  const { growth } = useSpiritualContext()
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-navy-800/98 backdrop-blur-xl border-t border-navy-600">
-      <div className="flex items-center justify-around px-1 pt-1.5 pb-safe-bottom"
+    <nav aria-label="Navigation principale"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-navy-900/95 backdrop-blur-xl border-t border-white/5">
+      <div className="flex items-stretch justify-around px-1 pt-1.5"
         style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-xl transition-all duration-200 min-w-0 ${
-                isActive ? 'text-gold-400' : 'text-slate-500 active:text-slate-300'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <div className={`p-1.5 rounded-xl transition-all duration-200 ${isActive ? 'bg-gold-500/10' : ''}`}>
-                  <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
-                </div>
-                <span className="text-[9px] font-medium leading-none truncate w-full text-center">
-                  {label}
-                </span>
-              </>
-            )}
-          </NavLink>
-        ))}
+        {NAV_ITEMS.map(({ to, label, icon, end, also = [] }) => {
+          const extra = also.some(p => pathname.startsWith(p))
+          return (
+            <NavLink key={to} to={to} end={end}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center gap-1 flex-1 min-h-[56px] rounded-2xl transition-colors ${
+                  isActive || extra ? 'text-gold-300' : 'text-slate-500'
+                }`}
+            >
+              {({ isActive }) => {
+                const active = isActive || extra
+                return (
+                  <>
+                    <span className={`flex items-center justify-center w-11 h-8 rounded-full transition-all ${active ? 'bg-gold-500/15' : ''}`}>
+                      <Icon3D name={icon || growth.stage.icon} size={24} muted={!active} />
+                    </span>
+                    <span className={`text-[11px] leading-none ${active ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+                  </>
+                )
+              }}
+            </NavLink>
+          )
+        })}
       </div>
     </nav>
   )

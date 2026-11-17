@@ -1,52 +1,34 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Heart, Plus, CheckCircle2, Trash2, Clock, Tag, ChevronDown, X,
-  Flame, Timer, Play, Square, BookOpen, Filter
-} from 'lucide-react'
+import { Plus, CheckCircle2, ChevronDown, X, Play, Square } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import ConfirmButton from '../components/ConfirmButton'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import Icon3D from '../components/Icon3D'
+import PageHeader from '../components/PageHeader'
+import Tabs from '../components/Tabs'
+import { GUIDED_PRAYERS } from '../data/prayers'
+
+const Chapelet = lazy(() => import('./Chapelet'))
 
 const CATEGORIES = [
-  { id: 'petition', label: 'Pétition', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  { id: 'intercession', label: 'Intercession', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
-  { id: 'thanksgiving', label: 'Louange', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  { id: 'confession', label: 'Confession', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
-  { id: 'adoration', label: 'Adoration', color: 'text-gold-400 bg-gold-500/10 border-gold-500/20' },
+  { id: 'petition', label: 'Demande', icon: 'hands' },
+  { id: 'intercession', label: 'Pour quelqu’un', icon: 'heart' },
+  { id: 'thanksgiving', label: 'Merci', icon: 'sparkles' },
+  { id: 'confession', label: 'Pardon', icon: 'droplet' },
+  { id: 'adoration', label: 'Louange', icon: 'star' },
 ]
 
-const GUIDED_PRAYERS = [
-  {
-    title: 'Prière de repentance',
-    text: 'Seigneur Jésus, je viens à toi avec un cœur contrit. Je reconnais mes péchés et mes manquements. Tu as dit dans ta Parole que si nous confessons nos péchés, tu es fidèle et juste pour nous les pardonner. Je te demande pardon pour [mes péchés]. Purifie-moi et renouvelle un esprit droit en moi. Merci pour ton amour qui ne change jamais. Amen.',
-    icon: '🙏',
-  },
-  {
-    title: 'Prière pour renouer avec Dieu',
-    text: 'Père céleste, je reconnais m\'être éloigné(e) de toi. Comme le fils prodigue, je reviens à toi. Tu m\'as promis que si je m\'approchais de toi, tu t\'approcherais de moi. Restaure notre relation, ravive le feu de ta présence dans ma vie. Je veux te connaître davantage chaque jour. Amen.',
-    icon: '💫',
-  },
-  {
-    title: 'Prière du matin',
-    text: 'Seigneur, merci pour ce nouveau jour que tu m\'accordes. Guide mes pas aujourd\'hui, que toutes mes pensées, mes paroles et mes actions te soient agréables. Remplis-moi de ton Saint-Esprit et que ta volonté s\'accomplisse dans ma vie aujourd\'hui. Amen.',
-    icon: '🌅',
-  },
-  {
-    title: 'Prière dans l\'épreuve',
-    text: 'Père, tu vois ma situation et tu connais ma douleur. Ta Parole dit que tu es un refuge et une forteresse. Je te confie ce fardeau. Donne-moi la paix qui surpasse toute intelligence et la force de traverser cette épreuve. Je sais que tu es avec moi. Amen.',
-    icon: '⚓',
-  },
-]
-
-// Minuteur basé sur l'heure de départ (et non sur un compteur) :
-// il reste juste si l'écran se verrouille, si l'appli passe en arrière-plan
-// ou si l'on change de page. L'heure de départ est sauvegardée.
-function PrayerTimer({ onSave }) {
+// ─── Minuteur ─────────────────────────────────────────────────────────────────
+// Basé sur l'heure de départ (sauvegardée) : reste juste si l'écran se verrouille
+// ou si l'on change de page.
+function PrayerTimer({ goalMinutes, onSave }) {
   const [startedAt, setStartedAt] = useLocalStorage('fj_prayerTimer', null)
   const [now, setNow] = useState(Date.now())
+  const [lastSaved, setLastSaved] = useState(null)
   const running = typeof startedAt === 'number'
 
   useEffect(() => {
@@ -55,106 +37,121 @@ function PrayerTimer({ onSave }) {
     tick()
     const id = setInterval(tick, 1000)
     document.addEventListener('visibilitychange', tick)
-    return () => {
-      clearInterval(id)
-      document.removeEventListener('visibilitychange', tick)
-    }
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick) }
   }, [running])
 
-  // Garde-fou : une session oubliée ouverte est plafonnée à 3 h
   const seconds = running ? Math.min(Math.max(0, Math.floor((now - startedAt) / 1000)), 3 * 3600) : 0
+  const pct = Math.min(100, Math.round((seconds / (goalMinutes * 60)) * 100))
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
-  const start = () => { setNow(Date.now()); setStartedAt(Date.now()) }
+  const start = () => { setLastSaved(null); setNow(Date.now()); setStartedAt(Date.now()) }
   const stop = () => {
-    if (seconds >= 30) onSave(Math.max(1, Math.round(seconds / 60)))
-    else if (seconds > 0) onSave(0)
+    const minutes = seconds >= 30 ? Math.max(1, Math.round(seconds / 60)) : 0
+    onSave(minutes)
+    setLastSaved(minutes)
     setStartedAt(null)
-  }
-  const cancel = () => setStartedAt(null)
-
-  const fmt = (s) => {
-    const h = Math.floor(s / 3600)
-    const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
-    const ss = String(s % 60).padStart(2, '0')
-    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
   }
 
   return (
-    <div className="card text-center space-y-4">
-      <p className="text-sm text-slate-500 font-medium">Minuteur de prière</p>
-      <div className="text-4xl font-mono font-bold text-slate-100 tracking-widest" aria-live="off">
-        {fmt(seconds)}
+    <div className="rounded-3xl p-6 bg-white/[0.04] border border-white/10 text-center">
+      <div className="relative w-36 h-36 mx-auto">
+        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#fbbf24" strokeWidth="6" strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 44} strokeDashoffset={2 * Math.PI * 44 * (1 - pct / 100)}
+            style={{ transition: 'stroke-dashoffset 1s linear' }} />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <Icon3D name="hands" size={36} />
+          <p className="font-mono text-xl font-bold text-slate-100 mt-1">{fmt(seconds)}</p>
+        </div>
       </div>
-      <div className="flex gap-3 justify-center">
+      <p className="text-sm text-slate-400 mt-3">
+        {running ? (pct >= 100 ? 'Objectif atteint ✓ — continuez si vous le souhaitez' : `Objectif du jour : ${goalMinutes} min`)
+          : lastSaved !== null ? (lastSaved > 0 ? `${lastSaved} min enregistrée${lastSaved > 1 ? 's' : ''}. Merci !` : 'Prière enregistrée. Merci !')
+          : 'Le temps continue même si vous verrouillez votre téléphone.'}
+      </p>
+      <div className="flex gap-3 justify-center mt-4">
         {!running ? (
-          <button onClick={start} className="btn-primary flex items-center gap-2 min-h-[44px]">
-            <Play size={15} /> Commencer
-          </button>
+          <button onClick={start} className="btn-primary min-h-[52px] px-8 flex items-center gap-2"><Play size={16} /> Commencer à prier</button>
         ) : (
           <>
-            <button onClick={cancel} className="btn-secondary text-sm min-h-[44px]">Annuler</button>
-            <button onClick={stop} className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-5 py-2.5 rounded-xl font-semibold transition-all min-h-[44px]">
-              <Square size={15} /> Terminer
-            </button>
+            <button onClick={() => setStartedAt(null)} className="btn-secondary min-h-[52px]">Annuler</button>
+            <button onClick={stop} className="btn-primary min-h-[52px] px-6 flex items-center gap-2"><Square size={15} /> Amen</button>
           </>
         )}
       </div>
-      <p className="text-xs text-slate-600">
-        {running
-          ? 'Le temps continue même si vous verrouillez votre téléphone.'
-          : 'Démarrez et priez — le temps sera enregistré automatiquement.'}
-      </p>
     </div>
   )
 }
 
+// ─── Onglet « Prier » ─────────────────────────────────────────────────────────
+function Prier() {
+  const { logActivity, profile } = useSpiritualContext()
+  const [open, setOpen] = useState(null)
+
+  return (
+    <div className="space-y-5">
+      <PrayerTimer goalMinutes={profile.dailyMinutes} onSave={(m) => logActivity('priere', m)} />
+
+      <div>
+        <h2 className="text-lg font-semibold text-slate-100 mb-3">Prières pour vous guider</h2>
+        <div className="space-y-2">
+          {GUIDED_PRAYERS.map((p, i) => (
+            <div key={p.title} className="rounded-2xl bg-white/[0.03] border border-white/5 overflow-hidden">
+              <button onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}
+                className="w-full flex items-center gap-3 p-4 text-left min-h-[60px]">
+                <Icon3D name={p.icon} size={30} />
+                <span className="flex-1 font-medium text-slate-200">{p.title}</span>
+                <ChevronDown size={18} className={`text-slate-500 transition-transform ${open === i ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {open === i && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                    <div className="px-4 pb-4">
+                      <p className="font-serif italic text-[17px] leading-relaxed text-slate-200">{p.text}</p>
+                      <button onClick={() => { logActivity('priere', 2); setOpen(null) }} className="btn-primary w-full mt-4 min-h-[48px]">
+                        J'ai prié cette prière
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Onglet « Intentions » ────────────────────────────────────────────────────
 function RequestCard({ req, onAnswer, onDelete }) {
   const [expanded, setExpanded] = useState(false)
   const cat = CATEGORIES.find(c => c.id === req.category) || CATEGORIES[0]
-  const dateStr = format(parseISO(req.date + 'T00:00:00'), 'd MMM yyyy', { locale: fr })
-
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
-      className={`card border transition-all duration-200 ${req.answered ? 'opacity-60' : 'hover:border-navy-500'}`}
-    >
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
+      className={`rounded-2xl p-4 bg-white/[0.03] border border-white/5 ${req.answered ? 'opacity-70' : ''}`}>
       <div className="flex items-start gap-3">
-        <button
-          onClick={() => !req.answered && onAnswer(req.id)}
-          aria-label={req.answered ? 'Prière exaucée' : 'Marquer comme exaucée'}
-          className={`-m-2 p-2 flex-shrink-0 transition-all duration-200 ${req.answered ? 'text-emerald-400' : 'text-slate-600 hover:text-emerald-400'}`}
-        >
-          <CheckCircle2 size={20} />
-        </button>
+        <Icon3D name={req.answered ? 'sparkles' : cat.icon} size={30} />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h4 className={`font-medium text-sm ${req.answered ? 'line-through text-slate-500' : 'text-slate-200'}`}>
-              {req.title}
-            </h4>
-            <span className={`badge border ${cat.color}`}>{cat.label}</span>
-            {req.answered && <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Exaucée ✓</span>}
-          </div>
-          <p className="text-xs text-slate-600">{dateStr}</p>
+          <p className={`font-medium ${req.answered ? 'text-slate-400' : 'text-slate-100'}`}>{req.title}</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {cat.label} · {format(parseISO(req.date + 'T00:00:00'), 'd MMM yyyy', { locale: fr })}
+            {req.answered && req.answeredDate && <span className="text-emerald-400"> · exaucée le {format(parseISO(req.answeredDate + 'T00:00:00'), 'd MMM', { locale: fr })}</span>}
+          </p>
           {req.description && (
             <>
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="text-xs text-slate-500 hover:text-slate-300 mt-1 flex items-center gap-1 transition-colors"
-              >
-                {expanded ? 'Réduire' : 'Voir détails'} <ChevronDown size={10} className={expanded ? 'rotate-180' : ''} />
+              <button onClick={() => setExpanded(!expanded)} className="text-xs text-slate-400 mt-1 min-h-[32px]">
+                {expanded ? 'Masquer' : 'Voir les détails'}
               </button>
-              <AnimatePresence>
-                {expanded && (
-                  <motion.p
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    className="text-sm text-slate-400 mt-2 leading-relaxed overflow-hidden"
-                  >
-                    {req.description}
-                  </motion.p>
-                )}
-              </AnimatePresence>
+              {expanded && <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{req.description}</p>}
             </>
+          )}
+          {!req.answered && (
+            <button onClick={() => onAnswer(req.id)} className="mt-2 text-sm text-emerald-300 flex items-center gap-1.5 min-h-[36px]">
+              <CheckCircle2 size={16} /> Dieu a répondu
+            </button>
           )}
         </div>
         <ConfirmButton onConfirm={() => onDelete(req.id)} size={15} />
@@ -163,214 +160,98 @@ function RequestCard({ req, onAnswer, onDelete }) {
   )
 }
 
-export default function Prayer() {
-  const { prayerRequests, addPrayerRequest, markAnswered, deletePrayerRequest, markPrayed, prayerStreak } = useSpiritualContext()
-
+function Intentions() {
+  const { prayerRequests, addPrayerRequest, markAnswered, deletePrayerRequest } = useSpiritualContext()
   const [showAdd, setShowAdd] = useState(false)
-  const [filter, setFilter] = useState('all') // 'all' | 'active' | 'answered'
-  const [newTitle, setNewTitle] = useState('')
-  const [newDesc, setNewDesc] = useState('')
-  const [newCat, setNewCat] = useState('petition')
-  const [showGuided, setShowGuided] = useState(false)
-  const [selectedGuided, setSelectedGuided] = useState(null)
+  const [filter, setFilter] = useState('active')
+  const [title, setTitle] = useState('')
+  const [desc, setDesc] = useState('')
+  const [cat, setCat] = useState('petition')
 
-  const handleAdd = (e) => {
+  const submit = (e) => {
     e.preventDefault()
-    if (!newTitle.trim()) return
-    addPrayerRequest(newTitle.trim(), newDesc.trim(), newCat)
-    setNewTitle('')
-    setNewDesc('')
-    setNewCat('petition')
-    setShowAdd(false)
+    if (!title.trim()) return
+    addPrayerRequest(title.trim().slice(0, 200), desc.trim().slice(0, 2000), cat)
+    setTitle(''); setDesc(''); setCat('petition'); setShowAdd(false)
   }
-
-  const filtered = prayerRequests.filter(r => {
-    if (filter === 'active') return !r.answered
-    if (filter === 'answered') return r.answered
-    return true
-  })
-
-  const activeCount = prayerRequests.filter(r => !r.answered).length
-  const answeredCount = prayerRequests.filter(r => r.answered).length
+  const active = prayerRequests.filter(r => !r.answered)
+  const answered = prayerRequests.filter(r => r.answered)
+  const list = filter === 'active' ? active : answered
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">Prière</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Parlez à Dieu — il vous écoute</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-xl">
-            <Flame size={14} className="text-orange-400" />
-            <span className="text-sm font-bold text-orange-400">{prayerStreak}</span>
-            <span className="text-xs text-orange-500/70">jours</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Prayer timer */}
-      <PrayerTimer onSave={markPrayed} />
-
-      {/* Guided prayers */}
-      <div className="card">
-        <button
-          onClick={() => setShowGuided(!showGuided)}
-          className="w-full flex items-center justify-between"
-        >
-          <div className="flex items-center gap-2">
-            <BookOpen size={16} className="text-gold-400" />
-            <span className="font-medium text-slate-200 text-sm">Prières guidées</span>
-          </div>
-          <ChevronDown size={16} className={`text-slate-500 transition-transform ${showGuided ? 'rotate-180' : ''}`} />
+    <div className="space-y-4">
+      {!showAdd ? (
+        <button onClick={() => setShowAdd(true)} className="btn-primary w-full min-h-[52px] flex items-center justify-center gap-2">
+          <Plus size={18} /> Confier une intention
         </button>
-        <AnimatePresence>
-          {showGuided && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {GUIDED_PRAYERS.map((p, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedGuided(selectedGuided === i ? null : i)}
-                    className="text-left p-3 bg-navy-700 hover:bg-navy-600 border border-navy-500 rounded-xl transition-all"
-                  >
-                    <span className="text-lg mb-1 block">{p.icon}</span>
-                    <p className="text-sm font-medium text-slate-200">{p.title}</p>
-                  </button>
-                ))}
-              </div>
-              <AnimatePresence>
-                {selectedGuided !== null && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="mt-4 p-4 bg-navy-900 border border-navy-600 rounded-xl"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-medium text-slate-200 flex items-center gap-2">
-                        <span>{GUIDED_PRAYERS[selectedGuided].icon}</span>
-                        {GUIDED_PRAYERS[selectedGuided].title}
-                      </h4>
-                      <button onClick={() => setSelectedGuided(null)} className="text-slate-600 hover:text-slate-400"><X size={14} /></button>
-                    </div>
-                    <p className="text-sm text-slate-300 leading-relaxed italic font-serif">
-                      "{GUIDED_PRAYERS[selectedGuided].text}"
-                    </p>
-                    <button
-                      onClick={() => { markPrayed(2); setSelectedGuided(null) }}
-                      className="mt-4 btn-primary text-sm w-full"
-                    >
-                      J'ai prié cette prière
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Prayer requests */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="section-title">Demandes de prière</h2>
-          <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 text-sm py-2">
-            <Plus size={15} /> Ajouter
-          </button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-2 mb-4">
-          {[
-            { id: 'all', label: `Toutes (${prayerRequests.length})` },
-            { id: 'active', label: `Actives (${activeCount})` },
-            { id: 'answered', label: `Exaucées (${answeredCount})` },
-          ].map(f => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-all ${
-                filter === f.id ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20' : 'bg-navy-700 text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Add form */}
-        <AnimatePresence>
-          {showAdd && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              className="card mb-4 border-gold-500/20 bg-navy-700"
-            >
-              <form onSubmit={handleAdd} className="space-y-3">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-medium text-slate-200 text-sm">Nouvelle demande</h3>
-                  <button type="button" onClick={() => setShowAdd(false)} className="text-slate-600 hover:text-slate-400"><X size={14} /></button>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Titre de la demande..."
-                  value={newTitle}
-                  onChange={e => setNewTitle(e.target.value)}
-                  className="input text-sm"
-                  autoFocus
-                />
-                <textarea
-                  placeholder="Détails (optionnel)..."
-                  value={newDesc}
-                  onChange={e => setNewDesc(e.target.value)}
-                  className="input text-sm resize-none h-20"
-                />
-                <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setNewCat(c.id)}
-                      className={`badge border text-xs cursor-pointer transition-all ${newCat === c.id ? c.color : 'bg-navy-700 text-slate-500 border-navy-500'}`}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button type="submit" className="btn-primary text-sm flex-1">Ajouter la demande</button>
-                  <button type="button" onClick={() => setShowAdd(false)} className="btn-secondary text-sm">Annuler</button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* List */}
-        {filtered.length === 0 ? (
-          <div className="card text-center py-12">
-            <Heart size={32} className="text-slate-700 mx-auto mb-3" />
-            <p className="text-slate-500 text-sm">
-              {filter === 'answered' ? 'Aucune prière exaucée pour l\'instant' : 'Ajoutez votre première demande de prière'}
-            </p>
+      ) : (
+        <motion.form onSubmit={submit} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl p-5 bg-white/[0.04] border border-gold-400/20 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-slate-100">Nouvelle intention</h3>
+            <button type="button" onClick={() => setShowAdd(false)} aria-label="Fermer" className="w-10 h-10 -m-2 flex items-center justify-center text-slate-500"><X size={18} /></button>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <AnimatePresence>
-              {filtered.map(req => (
-                <RequestCard
-                  key={req.id}
-                  req={req}
-                  onAnswer={markAnswered}
-                  onDelete={deletePrayerRequest}
-                />
-              ))}
-            </AnimatePresence>
+          <input value={title} onChange={e => setTitle(e.target.value)} maxLength={200} autoFocus
+            placeholder="Pour qui, pour quoi ?" className="input text-[16px]" />
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} maxLength={2000}
+            placeholder="Détails (facultatif)" className="input text-[16px] h-24 resize-none" />
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(c => (
+              <button key={c.id} type="button" onClick={() => setCat(c.id)}
+                className={`flex items-center gap-1.5 px-3 min-h-[40px] rounded-xl border text-sm ${
+                  cat === c.id ? 'bg-gold-500/15 border-gold-400/40 text-gold-200' : 'bg-white/[0.03] border-white/5 text-slate-400'}`}>
+                <Icon3D name={c.icon} size={18} muted={cat !== c.id} /> {c.label}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+          <button type="submit" disabled={!title.trim()} className="btn-primary w-full min-h-[48px] disabled:opacity-40">Confier à Dieu</button>
+        </motion.form>
+      )}
+
+      <Tabs value={filter} onChange={setFilter} tabs={[
+        { id: 'active', label: `En prière (${active.length})` },
+        { id: 'answered', label: `Exaucées (${answered.length})` },
+      ]} />
+
+      {list.length === 0 ? (
+        <div className="text-center py-12 space-y-3">
+          <Icon3D name={filter === 'answered' ? 'sparkles' : 'heart'} size={56} className="mx-auto" muted />
+          <p className="text-slate-400">
+            {filter === 'answered' ? 'Les prières exaucées apparaîtront ici. Gardez-en la mémoire : elles nourrissent la confiance.' : 'Confiez à Dieu une personne ou une situation.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <AnimatePresence>
+            {list.map(r => <RequestCard key={r.id} req={r} onAnswer={markAnswered} onDelete={deletePrayerRequest} />)}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function Prayer() {
+  const [params, setParams] = useSearchParams()
+  const tab = ['prier', 'chapelet', 'intentions'].includes(params.get('onglet')) ? params.get('onglet') : 'prier'
+  const setTab = (t) => setParams({ onglet: t }, { replace: true })
+
+  return (
+    <div>
+      <PageHeader icon="hands" title="Prière" subtitle="Parlez à Dieu — il vous écoute" />
+      <Tabs className="mb-5" value={tab} onChange={setTab} tabs={[
+        { id: 'prier', label: 'Prier', icon: 'candle' },
+        { id: 'chapelet', label: 'Chapelet', icon: 'beads' },
+        { id: 'intentions', label: 'Intentions', icon: 'heart' },
+      ]} />
+      {tab === 'prier' && <Prier />}
+      {tab === 'chapelet' && (
+        <Suspense fallback={<div className="py-16 text-center text-slate-500">Chargement…</div>}>
+          <Chapelet />
+        </Suspense>
+      )}
+      {tab === 'intentions' && <Intentions />}
     </div>
   )
 }

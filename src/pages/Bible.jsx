@@ -8,6 +8,11 @@ import {
 import { OLD_TESTAMENT, NEW_TESTAMENT, ALL_BOOKS, parseReference } from '../data/bibleBooks'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useMesseDuJour } from '../hooks/useMesse'
+import { LITURGICAL_COLORS } from '../utils/aelf'
+import Icon3D from '../components/Icon3D'
+import PageHeader from '../components/PageHeader'
+import Tabs from '../components/Tabs'
 
 // ─── Traductions disponibles ───────────────────────────────────────────────────
 const TRANSLATIONS = [
@@ -94,7 +99,7 @@ function BookSelector({ selected, onSelect, onClose }) {
 }
 
 // ─── Page principale ───────────────────────────────────────────────────────────
-export default function Bible() {
+function BibleReader() {
   const { markBibleRead, addBookmark, isBookmarked, readingProgress } = useSpiritualContext()
 
   const { removeBookmarkAt, unmarkBibleRead } = useSpiritualContext()
@@ -463,6 +468,97 @@ export default function Bible() {
           <span className="hidden sm:inline">Suiv.</span> <ChevronRight size={16} />
         </button>
       </div>
+    </div>
+  )
+}
+
+// ─── Lectures de la messe du jour (AELF) ───────────────────────────────────────
+const READING_ICONS = { lecture_1: 'scroll', lecture_2: 'scroll', psaume: 'bell', cantique: 'bell', evangile: 'book' }
+
+function LecturesDuJour() {
+  const { logActivity, getTodayLog } = useSpiritualContext()
+  const { data, loading, error, retry } = useMesseDuJour()
+  const [messeIdx, setMesseIdx] = useState(0)
+  const evangileLu = (getTodayLog().activities?.evangile || 0) > 0
+
+  if (loading) {
+    return <div className="flex justify-center py-16"><Loader2 size={28} className="text-gold-400 animate-spin" /></div>
+  }
+  if (error || !data) {
+    return (
+      <div className="text-center py-12 space-y-3">
+        <Icon3D name="scroll" size={56} className="mx-auto" muted />
+        <p className="text-slate-400">{error || 'Lectures indisponibles.'}</p>
+        <button onClick={retry} className="btn-secondary min-h-[44px]">Réessayer</button>
+      </div>
+    )
+  }
+  const messe = data.messes[Math.min(messeIdx, data.messes.length - 1)]
+  const couleur = LITURGICAL_COLORS[data.couleur]
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl p-4 bg-white/[0.04] border border-white/5">
+        <p className="text-slate-100 font-medium">{data.jour[0].charAt(0).toUpperCase() + data.jour[0].slice(1)}</p>
+        {data.jour.slice(1).map(l => <p key={l} className="text-sm text-slate-400">{l}</p>)}
+        {couleur && (
+          <p className="text-xs text-slate-500 mt-2 flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${couleur.className}`} /> Couleur liturgique : {couleur.label}
+          </p>
+        )}
+      </div>
+
+      {data.messes.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {data.messes.map((m, i) => (
+            <button key={i} onClick={() => setMesseIdx(i)}
+              className={`px-3 min-h-[40px] rounded-xl text-sm whitespace-nowrap border ${
+                i === messeIdx ? 'bg-gold-500/15 border-gold-400/40 text-gold-200' : 'bg-white/[0.03] border-white/5 text-slate-400'}`}>
+              {m.nom}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {messe.lectures.map((l, i) => (
+        <article key={i} className={`rounded-3xl p-5 border ${l.type === 'evangile' ? 'bg-gold-500/[0.06] border-gold-400/20' : 'bg-white/[0.03] border-white/5'}`}>
+          <div className="flex items-center gap-3 mb-3">
+            <Icon3D name={READING_ICONS[l.type] || 'scroll'} size={30} />
+            <div className="min-w-0">
+              <p className={`text-xs font-semibold uppercase tracking-wider ${l.type === 'evangile' ? 'text-gold-300' : 'text-slate-400'}`}>{l.label}</p>
+              <p className="text-sm text-slate-300">{l.ref}</p>
+            </div>
+          </div>
+          {l.titre && <p className="font-serif italic text-[17px] text-slate-200 mb-3">{l.titre}</p>}
+          {l.acclamation && <p className="text-sm text-slate-400 italic whitespace-pre-line mb-3">{l.acclamation}</p>}
+          {l.refrain && <p className="text-[15px] font-semibold text-gold-200 whitespace-pre-line mb-3">R/ {l.refrain}</p>}
+          {l.intro && <p className="text-sm text-slate-500 mb-2">{l.intro}</p>}
+          <p className="text-[17px] leading-[1.75] text-slate-100 whitespace-pre-line">{l.texte}</p>
+        </article>
+      ))}
+
+      <button onClick={() => logActivity('evangile')} disabled={evangileLu}
+        className="btn-primary w-full min-h-[52px] disabled:opacity-60">
+        {evangileLu ? 'Parole du jour accueillie ✓' : 'J’ai lu les lectures du jour'}
+      </button>
+      <p className="text-xs text-slate-600 text-center">Textes : traduction liturgique officielle — © AELF, Paris</p>
+    </div>
+  )
+}
+
+export default function Bible() {
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('onglet') === 'jour' ? 'jour' : 'lire'
+  const setTab = (t) => setParams(t === 'jour' ? { onglet: 'jour' } : {}, { replace: true })
+
+  return (
+    <div>
+      <PageHeader icon="book" title="Bible" subtitle="« Ta parole est la lumière de mes pas » — Ps 118, 105" />
+      <Tabs className="mb-5" value={tab} onChange={setTab} tabs={[
+        { id: 'jour', label: 'Lectures du jour', icon: 'scroll' },
+        { id: 'lire', label: 'Lire la Bible', icon: 'book' },
+      ]} />
+      {tab === 'jour' ? <LecturesDuJour /> : <BibleReader />}
     </div>
   )
 }

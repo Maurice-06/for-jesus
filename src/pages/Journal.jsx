@@ -6,16 +6,18 @@ import {
 } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import ConfirmButton from '../components/ConfirmButton'
+import Icon3D from '../components/Icon3D'
+import PageHeader from '../components/PageHeader'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 const MOODS = [
-  { id: 'joyful', label: 'Joyeux/se', icon: Sun, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  { id: 'peaceful', label: 'En paix', icon: Anchor, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  { id: 'grateful', label: 'Reconnaissant(e)', icon: Star, color: 'text-gold-400 bg-gold-500/10 border-gold-500/20' },
-  { id: 'seeking', label: 'En quête', icon: Cloud, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
-  { id: 'struggling', label: 'Dans l\'épreuve', icon: CloudRain, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
-  { id: 'renewed', label: 'Renouvelé(e)', icon: Sparkles, color: 'text-spirit-400 bg-spirit-500/10 border-spirit-500/20' },
+  { id: 'joyful', label: 'Joyeux/se', icon3d: 'sun', icon: Sun, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
+  { id: 'peaceful', label: 'En paix', icon3d: 'dove', icon: Anchor, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  { id: 'grateful', label: 'Reconnaissant(e)', icon3d: 'star', icon: Star, color: 'text-gold-400 bg-gold-500/10 border-gold-500/20' },
+  { id: 'seeking', label: 'En quête', icon3d: 'bulb', icon: Cloud, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
+  { id: 'struggling', label: 'Dans l\'épreuve', icon3d: 'anchor', icon: CloudRain, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+  { id: 'renewed', label: 'Renouvelé(e)', icon3d: 'sparkles', icon: Sparkles, color: 'text-spirit-400 bg-spirit-500/10 border-spirit-500/20' },
 ]
 
 const REFLECTION_PROMPTS = [
@@ -42,11 +44,7 @@ function EntryCard({ entry, onDelete, onEdit }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          {mood && (
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border ${mood.color}`}>
-              <MoodIcon size={16} />
-            </div>
-          )}
+          <Icon3D name={mood?.icon3d || 'writing'} size={34} />
           <div className="flex-1 min-w-0">
             <p className="text-xs text-slate-500 capitalize">{dateStr}</p>
             {entry.mood && <p className={`text-xs font-medium mt-0.5 ${mood?.color?.split(' ')[0]}`}>{mood?.label}</p>}
@@ -136,11 +134,11 @@ function JournalForm({ initial, onSave, onCancel }) {
                   key={m.id}
                   type="button"
                   onClick={() => setMood(mood === m.id ? '' : m.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-3 min-h-[40px] rounded-xl border text-sm font-medium transition-all ${
                     mood === m.id ? m.color : 'bg-navy-800 border-navy-600 text-slate-500 hover:text-slate-300'
                   }`}
                 >
-                  <MoodIcon size={12} />
+                  <Icon3D name={m.icon3d} size={18} muted={mood !== m.id} />
                   {m.label}
                 </button>
               )
@@ -170,7 +168,7 @@ function JournalForm({ initial, onSave, onCancel }) {
             placeholder="Écrivez librement ce que Dieu a mis sur votre cœur..."
             value={content}
             onChange={e => setContent(e.target.value)}
-            className="input text-sm resize-none h-32"
+            className="input text-[16px] leading-relaxed resize-none h-40"
           />
         </div>
 
@@ -250,26 +248,12 @@ export default function Journal() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">Journal spirituel</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Vos pensées, prières et révélations</p>
-        </div>
-        {!showForm && !editEntry && (
-          <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2 text-sm py-2">
-            <Plus size={15} /> Écrire
+      <PageHeader icon="journal" title="Journal" subtitle="Ce que Dieu met sur votre cœur"
+        right={!showForm && !editEntry && (
+          <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2 min-h-[44px] px-4">
+            <Plus size={16} /> Écrire
           </button>
-        )}
-      </div>
-
-      {/* Quote */}
-      <div className="card-glass border-l-2 border-gold-500/40">
-        <p className="text-verse text-sm">
-          "Écris dans un livre tout ce que tu vois."
-        </p>
-        <cite className="text-xs text-gold-500 not-italic mt-1 block">Apocalypse 1:19</cite>
-      </div>
+        )} />
 
       {/* Form */}
       <AnimatePresence>
@@ -305,7 +289,7 @@ export default function Journal() {
       {/* Entries */}
       {filtered.length === 0 ? (
         <div className="card text-center py-14">
-          <NotebookPen size={36} className="text-slate-700 mx-auto mb-3" />
+          <Icon3D name="writing" size={56} className="mx-auto mb-3" muted={!!search} />
           <p className="text-slate-400 font-medium mb-1">
             {search ? 'Aucun résultat' : 'Votre journal est vide'}
           </p>

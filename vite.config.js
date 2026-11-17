@@ -28,9 +28,20 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webp}'],
         navigateFallback: '/index.html',
         runtimeCaching: [
+          {
+            // Lectures du jour AELF : réseau d'abord, cache si hors ligne
+            urlPattern: ({ url }) => url.origin === 'https://api.aelf.org',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'aelf-lectures',
+              networkTimeoutSeconds: 6,
+              expiration: { maxEntries: 14, maxAgeSeconds: 60 * 60 * 24 * 14 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
           {
             // Chapitres déjà ouverts : relisibles hors ligne
             urlPattern: ({ url }) => url.origin === 'https://bolls.life' || url.origin === 'https://bible-api.com',

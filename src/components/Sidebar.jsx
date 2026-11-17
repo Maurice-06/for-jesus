@@ -1,71 +1,48 @@
-import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, Heart, NotebookPen, TrendingUp, Orbit, Wrench } from 'lucide-react'
-import { motion } from 'framer-motion'
-
-const navItems = [
-  { to: '/', label: 'Tableau de bord', icon: LayoutDashboard },
-  { to: '/bible', label: 'Bible', icon: BookOpen },
-  { to: '/priere', label: 'Prière', icon: Heart },
-  { to: '/chapelet', label: 'Chapelet', icon: Orbit },
-  { to: '/journal', label: 'Journal', icon: NotebookPen },
-  { to: '/outils', label: 'Outils', icon: Wrench },
-  { to: '/progres', label: 'Progrès', icon: TrendingUp },
-]
+import { NavLink, useLocation } from 'react-router-dom'
+import Icon3D from './Icon3D'
+import { NAV_ITEMS } from './navItems'
+import { useSpiritualContext } from '../context/SpiritualContext'
 
 export default function Sidebar() {
+  const { pathname } = useLocation()
+  const { growth } = useSpiritualContext()
+
   return (
-    <aside className="hidden md:flex flex-col w-60 min-h-screen bg-navy-800 border-r border-navy-600 sticky top-0">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-navy-600">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg glow-gold">
-          <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-            <rect x="10.5" y="2" width="3" height="20" rx="1.5"/>
-            <rect x="4" y="7" width="16" height="3" rx="1.5"/>
-          </svg>
-        </div>
+    <aside className="hidden md:flex flex-col w-64 h-screen bg-navy-900/80 border-r border-white/5 sticky top-0">
+      <div className="flex items-center gap-3 px-6 py-6">
+        <Icon3D name="cross" size={36} />
         <div>
-          <h1 className="font-semibold text-slate-100 leading-tight">For Jesus</h1>
+          <p className="font-semibold text-slate-100 leading-tight">For Jesus</p>
           <p className="text-xs text-slate-500">Compagnon spirituel</p>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
-                isActive
-                  ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-navy-700'
+      <nav aria-label="Navigation principale" className="flex-1 px-3 py-2 space-y-1">
+        {NAV_ITEMS.map(({ to, label, icon, end, also = [] }) => (
+          <NavLink key={to} to={to} end={end}
+            className={({ isActive }) => {
+              const active = isActive || also.some(p => pathname.startsWith(p))
+              return `flex items-center gap-3 px-4 py-3 rounded-2xl text-[15px] transition-all ${
+                active ? 'bg-gold-500/10 text-gold-300 font-semibold' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 font-medium'
               }`
-            }
+            }}
           >
             {({ isActive }) => (
               <>
-                <Icon size={18} className={isActive ? 'text-gold-400' : ''} />
+                <Icon3D name={icon || growth.stage.icon} size={26} muted={!(isActive || also.some(p => pathname.startsWith(p)))} />
                 {label}
-                {isActive && (
-                  <motion.div
-                    layoutId="sidebar-indicator"
-                    className="ml-auto w-1.5 h-1.5 rounded-full bg-gold-400"
-                  />
-                )}
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* Bottom verse */}
-      <div className="px-4 py-4 border-t border-navy-600">
-        <p className="text-xs text-slate-500 italic text-center leading-relaxed">
-          "Je puis tout par celui qui me fortifie."
-          <span className="block text-gold-600 not-italic mt-0.5">Phil. 4:13</span>
-        </p>
+      <div className="m-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
+        <Icon3D name={growth.stage.icon} size={36} />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-200">{growth.stage.name}</p>
+          <p className="text-xs text-slate-500">{growth.faithfulDays} jour{growth.faithfulDays > 1 ? 's' : ''} de rencontre</p>
+        </div>
       </div>
     </aside>
   )

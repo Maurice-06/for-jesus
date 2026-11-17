@@ -1,230 +1,209 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Heart, BookOpen, Flame, Star, ChevronRight, CheckCircle2, Circle, Sparkles, AlertCircle, Info } from 'lucide-react'
-import { useSpiritualContext } from '../context/SpiritualContext'
-import { DAILY_VERSES } from '../data/bibleBooks'
+import { ChevronRight, Check } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useSpiritualContext } from '../context/SpiritualContext'
+import { DAILY_VERSES } from '../data/bibleBooks'
+import { useMesseDuJour } from '../hooks/useMesse'
+import { getEvangile, LITURGICAL_COLORS } from '../utils/aelf'
+import Icon3D from '../components/Icon3D'
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.07, duration: 0.4, ease: 'easeOut' } }),
+  hidden: { opacity: 0, y: 14 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.35, ease: 'easeOut' } }),
 }
+const Section = ({ i, children, className = '' }) => (
+  <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={i} className={className}>{children}</motion.section>
+)
 
-function StreakBadge({ count, label, icon: Icon, color }) {
-  return (
-    <div className={`flex items-center gap-3 card p-4`}>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color}`}>
-        <Icon size={20} />
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-slate-100">{count}</p>
-        <p className="text-xs text-slate-500">{label}</p>
-      </div>
-    </div>
-  )
-}
-
-function DailyCheckItem({ done, label, icon: Icon, onCheck, linkTo }) {
-  return (
-    <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-200 ${
-      done ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-navy-700 border-navy-600 hover:border-navy-500'
-    }`}>
-      <button
-        onClick={onCheck}
-        disabled={done}
-        aria-label={done ? `${label} — fait` : label}
-        className={`flex-shrink-0 min-w-[40px] min-h-[40px] -m-2 flex items-center justify-center transition-all duration-200 ${done ? 'text-emerald-400' : 'text-slate-500 hover:text-gold-400'}`}
-      >
-        {done ? <CheckCircle2 size={22} /> : <Circle size={22} />}
-      </button>
-      <Icon size={16} className={done ? 'text-emerald-400' : 'text-slate-500'} />
-      <span className={`text-sm font-medium flex-1 ${done ? 'text-emerald-300 line-through decoration-emerald-500/40' : 'text-slate-300'}`}>
-        {label}
-      </span>
-      {!done && (
-        <Link to={linkTo} className="text-xs text-gold-500 hover:text-gold-400 transition-colors py-2 px-1">
-          Faire <ChevronRight size={12} className="inline" />
-        </Link>
-      )}
-    </div>
-  )
+function greeting(hour) {
+  if (hour < 5) return 'Bonne nuit'
+  if (hour < 12) return 'Bonjour'
+  if (hour < 18) return 'Bon après-midi'
+  return 'Bonsoir'
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const { getTodayLog, markPrayed, prayerStreak, readingStreak, getWeeklyStats, getEncouragementMessage, prayerRequests, totalChaptersRead } = useSpiritualContext()
-  const todayLog = getTodayLog()
-  const weeklyStats = getWeeklyStats()
-  const encourage = getEncouragementMessage()
+  const {
+    getTodayLog, profile, growth, getThisWeek, getEncouragementMessage,
+    goalSuggestion, setDailyMinutes, snoozeGoalSuggestion,
+  } = useSpiritualContext()
+  const { data: messe } = useMesseDuJour()
+  const evangile = getEvangile(messe)
 
-  // Daily verse rotation based on day of year
   const now = new Date()
+  const todayLog = getTodayLog()
+  const momentDone = (todayLog.activities?.moment || 0) > 0
+  const week = getThisWeek()
+  const weekCount = week.filter(d => d.active).length
+  const encourage = getEncouragementMessage()
+  const isMercyHour = now.getHours() === 15
+  const couleur = LITURGICAL_COLORS[messe?.couleur]
+
   const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000)
   const dailyVerse = DAILY_VERSES[dayOfYear % DAILY_VERSES.length]
 
-  const activePrayers = prayerRequests.filter(r => !r.answered).length
-
-  const EncourageIcon = {
-    alert: AlertCircle,
-    info: Info,
-    success: Sparkles,
-  }[encourage.type]
-
-  const encourageStyle = {
-    alert: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
-    info: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
-    success: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
-  }[encourage.type]
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="text-slate-500 text-sm capitalize">
-              {format(new Date(), "EEEE d MMMM yyyy", { locale: fr })}
-            </p>
-            <h1 className="text-2xl font-bold text-slate-100">
-              Bonjour <span className="text-gradient-gold">bien-aimé(e)</span>
-            </h1>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg glow-gold animate-pulse-slow">
-            <svg viewBox="0 0 24 24" fill="white" className="w-6 h-6">
-              <rect x="10.5" y="2" width="3" height="20" rx="1.5"/>
-              <rect x="4" y="7" width="16" height="3" rx="1.5"/>
-            </svg>
-          </div>
-        </div>
-      </motion.div>
+    <div className="space-y-5">
+      {/* En-tête : date et calendrier liturgique */}
+      <Section i={0}>
+        <p className="text-slate-400 text-sm capitalize">{format(now, 'EEEE d MMMM', { locale: fr })}</p>
+        <h1 className="text-[28px] font-bold text-slate-50 tracking-tight">{greeting(now.getHours())} 🙏</h1>
+        {messe && (
+          <p className="mt-1 text-sm text-slate-400 flex items-center gap-2">
+            {couleur && <span className={`inline-block w-2.5 h-2.5 rounded-full ${couleur.className}`} title={`Couleur liturgique : ${couleur.label}`} />}
+            <span className="truncate">{messe.fete ? `${messe.fete} · ` : ''}{messe.jour[0]}</span>
+          </p>
+        )}
+      </Section>
 
-      {/* Encouragement banner */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
-        <div className={`flex items-start gap-3 p-4 rounded-xl border ${encourageStyle}`}>
-          <EncourageIcon size={18} className="flex-shrink-0 mt-0.5" />
-          <p className="text-sm leading-relaxed">{encourage.message}</p>
-        </div>
-      </motion.div>
+      {/* Message bienveillant */}
+      <Section i={1}>
+        <p className={`text-[15px] leading-relaxed ${encourage.type === 'welcome' ? 'text-gold-200' : 'text-slate-300'}`}>
+          {encourage.message}
+        </p>
+      </Section>
 
-      {/* Daily verse */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}>
-        <div className="card-glass relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
-          <div className="flex items-center gap-2 mb-3">
-            <Star size={14} className="text-gold-400" />
-            <span className="text-xs font-medium text-gold-400 uppercase tracking-wider">Verset du jour</span>
-          </div>
-          <blockquote className="text-verse mb-3">"{dailyVerse.text}"</blockquote>
-          <div className="flex items-center justify-between">
-            <cite className="text-sm text-gold-500 font-medium not-italic">{dailyVerse.ref_fr}</cite>
-            <Link to="/bible" className="text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1">
-              Ouvrir la Bible <ChevronRight size={12} />
-            </Link>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Daily checklist */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}>
-        <h2 className="section-title mb-3">Aujourd'hui</h2>
-        <div className="space-y-2">
-          <DailyCheckItem
-            done={todayLog.prayed}
-            label="J'ai prié aujourd'hui"
-            icon={Heart}
-            onCheck={() => markPrayed(0)}
-            linkTo="/priere"
-          />
-          <DailyCheckItem
-            done={todayLog.bibleRead}
-            label="J'ai lu la Bible aujourd'hui"
-            icon={BookOpen}
-            onCheck={() => navigate('/bible')}
-            linkTo="/bible"
-          />
-        </div>
-      </motion.div>
-
-      {/* Streaks */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}>
-        <h2 className="section-title mb-3">Mes séries</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <StreakBadge
-            count={prayerStreak}
-            label={prayerStreak === 1 ? 'jour de prière' : 'jours de prière'}
-            icon={Flame}
-            color="bg-orange-500/15 text-orange-400"
-          />
-          <StreakBadge
-            count={readingStreak}
-            label={readingStreak === 1 ? 'jour de lecture' : 'jours de lecture'}
-            icon={BookOpen}
-            color="bg-spirit-500/15 text-spirit-400"
-          />
-        </div>
-      </motion.div>
-
-      {/* Weekly summary */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={5}>
-        <h2 className="section-title mb-3">Cette semaine</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: 'Jours de prière', value: weeklyStats.prayerDays, suffix: '/7', color: 'text-orange-400' },
-            { label: 'Jours de lecture', value: weeklyStats.readingDays, suffix: '/7', color: 'text-spirit-400' },
-            { label: 'Minutes de prière', value: weeklyStats.totalPrayerMinutes, suffix: 'min', color: 'text-gold-400' },
-            { label: 'Chapitres lus', value: weeklyStats.totalChapters, suffix: '', color: 'text-emerald-400' },
-          ].map(({ label, value, suffix, color }) => (
-            <div key={label} className="card text-center">
-              <p className={`text-2xl font-bold ${color}`}>{value}<span className="text-sm text-slate-500 font-normal">{suffix}</span></p>
-              <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+      {/* Le cœur de l'appli : Mon moment avec Dieu */}
+      <Section i={2}>
+        <Link to="/moment"
+          className="block relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-gold-500/20 via-gold-600/10 to-transparent border border-gold-400/20 active:scale-[0.99] transition-transform">
+          <div className="absolute -right-6 -top-6 w-40 h-40 bg-gold-400/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-start gap-4">
+            <Icon3D name={momentDone ? 'sparkles' : 'candle'} size={64} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gold-300">
+                {momentDone ? 'Moment vécu aujourd’hui' : 'Mon moment avec Dieu'}
+              </p>
+              <h2 className="text-xl font-semibold text-slate-50 mt-1 leading-snug">
+                {momentDone ? 'Revenir prier un instant' : `${profile.dailyMinutes} minutes pour Lui`}
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">Évangile · méditation · prière · une ligne au journal</p>
             </div>
+          </div>
+          <div className={`mt-5 w-full min-h-[52px] rounded-2xl flex items-center justify-center gap-2 font-semibold text-[16px] ${
+            momentDone ? 'bg-white/10 text-slate-100' : 'bg-gold-500 text-navy-950 shadow-lg shadow-gold-500/20'}`}>
+            {momentDone ? <><Check size={18} /> Prier encore</> : 'Commencer'}
+          </div>
+        </Link>
+      </Section>
+
+      {/* Heure de la Miséricorde (15h) */}
+      {isMercyHour && (
+        <Section i={3}>
+          <Link to="/priere?onglet=chapelet&chapelet=misericorde"
+            className="flex items-center gap-4 p-4 rounded-2xl bg-rose-500/10 border border-rose-400/20">
+            <Icon3D name="blood" size={40} />
+            <div className="flex-1">
+              <p className="font-semibold text-rose-200">C'est l'Heure de la Miséricorde</p>
+              <p className="text-sm text-slate-400">15h — prier le chapelet de la Divine Miséricorde</p>
+            </div>
+            <ChevronRight size={18} className="text-slate-500" />
+          </Link>
+        </Section>
+      )}
+
+      {/* Proposition d'augmenter l'objectif, en douceur */}
+      {goalSuggestion && (
+        <Section i={3}>
+          <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20">
+            <div className="flex items-center gap-3">
+              <Icon3D name="herb" size={36} />
+              <p className="text-[15px] text-slate-200 leading-snug">
+                Vous avez prié {goalSuggestion.from} minutes {goalSuggestion.days} jours cette semaine. Passer à {goalSuggestion.to} minutes ?
+              </p>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setDailyMinutes(goalSuggestion.to)} className="btn-primary flex-1 min-h-[44px]">Oui, {goalSuggestion.to} min</button>
+              <button onClick={snoozeGoalSuggestion} className="btn-secondary min-h-[44px]">Plus tard</button>
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* Ma semaine + croissance */}
+      <Section i={4}>
+        <Link to="/chemin" className="block card-glass active:scale-[0.99] transition-transform">
+          <div className="flex items-center gap-4">
+            <Icon3D name={growth.stage.icon} size={52} />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-slate-100">{growth.stage.name}</p>
+              <p className="text-sm text-slate-400">
+                {growth.nextStage
+                  ? `Encore ${growth.toNext} jour${growth.toNext > 1 ? 's' : ''} de rencontre avant « ${growth.nextStage.name.toLowerCase()} »`
+                  : 'Votre arbre abrite les oiseaux du ciel.'}
+              </p>
+            </div>
+            <ChevronRight size={18} className="text-slate-600" />
+          </div>
+          {growth.nextStage && (
+            <div className="mt-3 h-1.5 rounded-full bg-white/5 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300" style={{ width: `${growth.pct}%` }} />
+            </div>
+          )}
+          <div className="mt-4 flex items-center justify-between">
+            {week.map(d => (
+              <div key={d.date} className="flex flex-col items-center gap-1.5">
+                <span className={`text-[11px] ${d.isToday ? 'text-gold-300 font-semibold' : 'text-slate-500'}`}>{d.letter}</span>
+                <span className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  d.active ? 'bg-gold-500 text-navy-950' : d.isToday ? 'border-2 border-gold-400/50' : d.future ? 'bg-white/[0.02]' : 'bg-white/5'
+                }`}>
+                  {d.active && <Check size={15} strokeWidth={3} />}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-500 text-center">
+            {weekCount === 0 ? 'Chaque jour est un nouveau départ.' : `${weekCount} jour${weekCount > 1 ? 's' : ''} avec Dieu cette semaine`}
+          </p>
+        </Link>
+      </Section>
+
+      {/* Parole du jour */}
+      <Section i={5}>
+        <Link to={evangile ? '/bible?onglet=jour' : '/bible'} className="block card-glass active:scale-[0.99] transition-transform">
+          <div className="flex items-center gap-2 mb-2">
+            <Icon3D name="scroll" size={22} />
+            <span className="text-xs font-semibold uppercase tracking-wider text-gold-300">
+              {evangile ? 'Évangile du jour' : 'Verset du jour'}
+            </span>
+          </div>
+          {evangile ? (
+            <>
+              <p className="text-verse text-[17px]">{evangile.titre || evangile.texte.slice(0, 140) + '…'}</p>
+              <p className="text-sm text-gold-400 mt-2">{evangile.ref}</p>
+            </>
+          ) : (
+            <>
+              <p className="text-verse text-[17px]">« {dailyVerse.text} »</p>
+              <p className="text-sm text-gold-400 mt-2">{dailyVerse.ref_fr}</p>
+            </>
+          )}
+        </Link>
+      </Section>
+
+      {/* Pour aller plus loin */}
+      <Section i={6}>
+        <h2 className="text-lg font-semibold text-slate-100 mb-3">Pour aller plus loin</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { to: '/priere?onglet=chapelet', icon: 'beads', label: 'Chapelet', sub: 'Rosaire, Miséricorde' },
+            { to: '/bible', icon: 'book', label: 'Bible', sub: 'Lire un chapitre' },
+            { to: '/journal', icon: 'writing', label: 'Journal', sub: 'Écrire à Dieu' },
+            { to: '/priere?onglet=intentions', icon: 'heart', label: 'Intentions', sub: 'Confier une personne' },
+          ].map(c => (
+            <Link key={c.to} to={c.to}
+              className="p-4 rounded-2xl bg-white/[0.04] border border-white/5 active:scale-[0.98] transition-transform min-h-[112px] flex flex-col justify-between">
+              <Icon3D name={c.icon} size={36} />
+              <div>
+                <p className="font-semibold text-slate-100 text-[15px]">{c.label}</p>
+                <p className="text-xs text-slate-500">{c.sub}</p>
+              </div>
+            </Link>
           ))}
         </div>
-      </motion.div>
-
-      {/* Quick links */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={6}>
-        <h2 className="section-title mb-3">Accès rapide</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Link to="/priere" className="card hover:border-gold-500/30 hover:bg-navy-700 transition-all duration-200 group">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                <Heart size={18} className="text-red-400" />
-              </div>
-              <div>
-                <p className="font-medium text-slate-200 text-sm">Prière</p>
-                <p className="text-xs text-slate-500">{activePrayers} demandes actives</p>
-              </div>
-              <ChevronRight size={16} className="ml-auto text-slate-600 group-hover:text-slate-400 transition-colors" />
-            </div>
-          </Link>
-          <Link to="/bible" className="card hover:border-gold-500/30 hover:bg-navy-700 transition-all duration-200 group">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-spirit-500/10 flex items-center justify-center">
-                <BookOpen size={18} className="text-spirit-400" />
-              </div>
-              <div>
-                <p className="font-medium text-slate-200 text-sm">Bible</p>
-                <p className="text-xs text-slate-500">{totalChaptersRead} chapitres lus</p>
-              </div>
-              <ChevronRight size={16} className="ml-auto text-slate-600 group-hover:text-slate-400 transition-colors" />
-            </div>
-          </Link>
-          <Link to="/journal" className="card hover:border-gold-500/30 hover:bg-navy-700 transition-all duration-200 group">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gold-500/10 flex items-center justify-center">
-                <Sparkles size={18} className="text-gold-400" />
-              </div>
-              <div>
-                <p className="font-medium text-slate-200 text-sm">Journal</p>
-                <p className="text-xs text-slate-500">Écrire aujourd'hui</p>
-              </div>
-              <ChevronRight size={16} className="ml-auto text-slate-600 group-hover:text-slate-400 transition-colors" />
-            </div>
-          </Link>
-        </div>
-      </motion.div>
+      </Section>
     </div>
   )
 }

@@ -37,6 +37,8 @@ const EXPECTED = {
   fj_activePlan: (v) => v === null || typeof v === 'string',
   fj_planStart: (v) => v === null || typeof v === 'string',
   fj_bibleLast: (v) => v === null || isPlainObject(v),
+  fj_profile: isPlainObject,
+  fj_neuvaine: (v) => v === null || isPlainObject(v),
 }
 
 /**

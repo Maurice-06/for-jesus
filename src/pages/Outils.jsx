@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookMarked, Target, Brain, Lightbulb, ChevronRight, ChevronDown,
@@ -10,6 +10,8 @@ import { useSpiritualContext } from '../context/SpiritualContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
 import ConfirmButton from '../components/ConfirmButton'
+import Icon3D from '../components/Icon3D'
+import PageHeader from '../components/PageHeader'
 import { exportBackup, importBackup, requestPersistentStorage } from '../utils/backup'
 import { fr } from 'date-fns/locale'
 
@@ -228,6 +230,7 @@ const EXAMINATION = [
 ]
 
 function ExaminationOfConscience() {
+  const { logActivity } = useSpiritualContext()
   const [checked, setChecked] = useState({})
   const [phase, setPhase] = useState('exam') // 'exam' | 'prayer'
 
@@ -290,6 +293,11 @@ function ExaminationOfConscience() {
           })}
         </div>
       ))}
+      {checkedCount === 0 && (
+        <button onClick={() => { logActivity('examen', 5); setPhase('prayer') }} className="btn-secondary w-full min-h-[48px]">
+          Terminer l'examen et prier
+        </button>
+      )}
       {checkedCount > 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="card border border-gold-500/20 text-center py-5 space-y-3">
@@ -297,7 +305,7 @@ function ExaminationOfConscience() {
             {checkedCount} point{checkedCount > 1 ? 's' : ''} identifié{checkedCount > 1 ? 's' : ''}.
             Confiez-les à Dieu dans la prière.
           </p>
-          <button onClick={() => setPhase('prayer')} className="btn-primary text-sm mx-auto flex items-center gap-2">
+          <button onClick={() => { logActivity('examen', 5); setPhase('prayer') }} className="btn-primary min-h-[48px] mx-auto flex items-center gap-2">
             Prier l'acte de contrition →
           </button>
         </motion.div>
@@ -520,72 +528,54 @@ function Backup() {
 
 // ─── Page principale ───────────────────────────────────────────────────────────
 const TOOLS = [
-  { id: 'progress', label: 'Mes progrès',            icon: TrendingUp, color: 'text-emerald-400', desc: 'Séries, calendrier et objectifs', to: '/progres' },
-  { id: 'plans',    label: 'Plans de lecture',       icon: Target,     color: 'text-gold-400',    desc: '5 plans pour lire la Bible méthodiquement' },
-  { id: 'bookmarks', label: 'Signets',               icon: BookMarked, color: 'text-spirit-400',  desc: 'Vos versets favoris enregistrés' },
-  { id: 'themes',   label: 'Méditations thématiques',icon: Lightbulb,  color: 'text-blue-400',    desc: 'Versets groupés par thème : paix, force, pardon...' },
-  { id: 'exam',     label: 'Examen de conscience',   icon: Brain,      color: 'text-red-400',     desc: 'Préparer sa confession et renouveler son cœur' },
-  { id: 'backup',   label: 'Sauvegarde',             icon: Save,       color: 'text-blue-400',    desc: 'Exporter ou restaurer vos données' },
+  { id: 'plans',     label: 'Plans de lecture',        icon3d: 'calendar', desc: '5 plans pour lire la Bible pas à pas' },
+  { id: 'bookmarks', label: 'Mes versets',             icon3d: 'bookmark', desc: 'Vos versets favoris enregistrés' },
+  { id: 'themes',    label: 'Méditer un thème',        icon3d: 'bulb',     desc: 'Paix, pardon, force, confiance…' },
+  { id: 'exam',      label: 'Examen de conscience',    icon3d: 'mirror',   desc: 'Préparer sa confession et renouveler son cœur' },
+  { id: 'backup',    label: 'Sauvegarde',              icon3d: 'save',     desc: 'Exporter ou restaurer vos données' },
+  { id: 'progress',  label: 'Mes statistiques',        icon3d: 'chart',    desc: 'Calendrier, minutes, lectures', to: '/progres' },
 ]
 
 export default function Outils() {
-  const [active, setActive] = useState(null)
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const active = TOOLS.some(t => t.id === params.get('outil')) ? params.get('outil') : null
   const tool = TOOLS.find(t => t.id === active)
+  const open = (t) => (t.to ? navigate(t.to) : setParams({ outil: t.id }))
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100">Outils spirituels</h1>
-        <p className="text-slate-500 text-sm mt-0.5">Plans, signets, méditations et examen de conscience</p>
-      </div>
-
-      {/* Tool selector */}
-      {!active && (
-        <motion.div initial="hidden" animate="visible" className="space-y-2">
-          {TOOLS.map((t, i) => {
-            const Icon = t.icon
-            return (
-              <motion.button key={t.id} variants={fadeUp} custom={i}
-                onClick={() => t.to ? navigate(t.to) : setActive(t.id)}
-                className="w-full card flex items-center gap-4 text-left hover:border-navy-500 transition-all group min-h-[64px]"
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  t.color.replace('text-', 'bg-').replace('400', '500/10')
-                }`}>
-                  <Icon size={18} className={t.color} />
-                </div>
+      {!active ? (
+        <>
+          <PageHeader icon="sparkles" title="Outils spirituels" subtitle="Plans, versets, méditations, examen" />
+          <div className="space-y-2">
+            {TOOLS.map(t => (
+              <button key={t.id} onClick={() => open(t)}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-left min-h-[68px]">
+                <Icon3D name={t.icon3d} size={34} />
                 <div className="flex-1">
-                  <p className="font-semibold text-slate-200 text-sm">{t.label}</p>
+                  <p className="font-semibold text-slate-100">{t.label}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{t.desc}</p>
                 </div>
-                <ChevronRight size={16} className="text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
-              </motion.button>
-            )
-          })}
+                <ChevronRight size={18} className="text-slate-600" />
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <motion.div key={active} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <button onClick={() => navigate('/chemin')}
+            className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 min-h-[44px] -ml-1 mb-2">
+            <ChevronRight size={16} className="rotate-180" /> Mon chemin
+          </button>
+          <PageHeader icon={tool.icon3d} title={tool.label} subtitle={tool.desc} />
+          {active === 'plans'     && <ReadingPlans />}
+          {active === 'bookmarks' && <Bookmarks />}
+          {active === 'themes'    && <MeditationThemes />}
+          {active === 'exam'      && <ExaminationOfConscience />}
+          {active === 'backup'    && <Backup />}
         </motion.div>
       )}
-
-      {/* Active tool */}
-      <AnimatePresence>
-        {active && tool && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <button onClick={() => setActive(null)}
-              className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300 transition-colors mb-4">
-              <ChevronRight size={14} className="rotate-180" /> Retour aux outils
-            </button>
-            <h2 className="section-title mb-4 flex items-center gap-2">
-              {(() => { const Icon = tool.icon; return <Icon size={18} className={tool.color} /> })()}
-              {tool.label}
-            </h2>
-            {active === 'plans'     && <ReadingPlans />}
-            {active === 'bookmarks' && <Bookmarks />}
-            {active === 'themes'    && <MeditationThemes />}
-            {active === 'exam'      && <ExaminationOfConscience />}
-            {active === 'backup'    && <Backup />}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

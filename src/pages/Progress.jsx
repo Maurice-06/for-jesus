@@ -8,7 +8,9 @@ import {
   TrendingUp, Flame, BookOpen, Heart, Target, Trophy, Star,
   Calendar, ChevronRight, Award, Zap
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useSpiritualContext } from '../context/SpiritualContext'
+import PageHeader from '../components/PageHeader'
 import { TOTAL_CHAPTERS } from '../data/bibleBooks'
 import { format } from 'date-fns'
 
@@ -134,8 +136,10 @@ export default function Progress() {
     <motion.div variants={{ visible: {} }} initial="hidden" animate="visible" className="space-y-6">
       {/* Header */}
       <motion.div variants={fadeUp} custom={0}>
-        <h1 className="text-2xl font-bold text-slate-100">Progrès</h1>
-        <p className="text-slate-500 text-sm mt-0.5">Suivez votre croissance spirituelle</p>
+        <Link to="/chemin" className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 min-h-[44px] -ml-1 mb-1">
+          <ChevronRight size={16} className="rotate-180" /> Mon chemin
+        </Link>
+        <PageHeader icon="chart" title="Mes statistiques" subtitle="Votre fidélité, jour après jour" />
       </motion.div>
 
       {/* Key stats */}
