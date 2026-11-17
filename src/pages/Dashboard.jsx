@@ -49,10 +49,10 @@ export default function Dashboard() {
       {/* En-tête : date et calendrier liturgique */}
       <Section i={0}>
         <p className="text-slate-400 text-sm capitalize">{format(now, 'EEEE d MMMM', { locale: fr })}</p>
-        <h1 className="text-[28px] font-bold text-slate-50 tracking-tight">{greeting(now.getHours())} 🙏</h1>
+        <h1 className="text-[1.75rem] font-bold text-slate-50 tracking-tight">{greeting(now.getHours())} 🙏</h1>
         {messe && (
           <p className="mt-1 text-sm text-slate-400 flex items-center gap-2">
-            {couleur && <span className={`inline-block w-2.5 h-2.5 rounded-full ${couleur.className}`} title={`Couleur liturgique : ${couleur.label}`} />}
+            {couleur && <span className="inline-block w-2.5 h-2.5 rounded-full ring-1 ring-slate-500/50" style={{ backgroundColor: couleur.hex }} title={`Couleur liturgique : ${couleur.label}`} />}
             <span className="truncate">{messe.fete ? `${messe.fete} · ` : ''}{messe.jour[0]}</span>
           </p>
         )}
@@ -60,7 +60,7 @@ export default function Dashboard() {
 
       {/* Message bienveillant */}
       <Section i={1}>
-        <p className={`text-[15px] leading-relaxed ${encourage.type === 'welcome' ? 'text-gold-200' : 'text-slate-300'}`}>
+        <p className={`text-[0.9375rem] leading-relaxed ${encourage.type === 'welcome' ? 'text-gold-200' : 'text-slate-300'}`}>
           {encourage.message}
         </p>
       </Section>
@@ -82,7 +82,7 @@ export default function Dashboard() {
               <p className="text-sm text-slate-400 mt-1">Évangile · méditation · prière · une ligne au journal</p>
             </div>
           </div>
-          <div className={`mt-5 w-full min-h-[52px] rounded-2xl flex items-center justify-center gap-2 font-semibold text-[16px] ${
+          <div className={`mt-5 w-full min-h-[52px] rounded-2xl flex items-center justify-center gap-2 font-semibold text-[1rem] ${
             momentDone ? 'bg-white/10 text-slate-100' : 'bg-gold-500 text-navy-950 shadow-lg shadow-gold-500/20'}`}>
             {momentDone ? <><Check size={18} /> Prier encore</> : 'Commencer'}
           </div>
@@ -110,7 +110,7 @@ export default function Dashboard() {
           <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20">
             <div className="flex items-center gap-3">
               <Icon3D name="herb" size={36} />
-              <p className="text-[15px] text-slate-200 leading-snug">
+              <p className="text-[0.9375rem] text-slate-200 leading-snug">
                 Vous avez prié {goalSuggestion.from} minutes {goalSuggestion.days} jours cette semaine. Passer à {goalSuggestion.to} minutes ?
               </p>
             </div>
@@ -145,7 +145,7 @@ export default function Dashboard() {
           <div className="mt-4 flex items-center justify-between">
             {week.map(d => (
               <div key={d.date} className="flex flex-col items-center gap-1.5">
-                <span className={`text-[11px] ${d.isToday ? 'text-gold-300 font-semibold' : 'text-slate-500'}`}>{d.letter}</span>
+                <span className={`text-[0.6875rem] ${d.isToday ? 'text-gold-300 font-semibold' : 'text-slate-500'}`}>{d.letter}</span>
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   d.active ? 'bg-gold-500 text-navy-950' : d.isToday ? 'border-2 border-gold-400/50' : d.future ? 'bg-white/[0.02]' : 'bg-white/5'
                 }`}>
@@ -171,12 +171,12 @@ export default function Dashboard() {
           </div>
           {evangile ? (
             <>
-              <p className="text-verse text-[17px]">{evangile.titre || evangile.texte.slice(0, 140) + '…'}</p>
+              <p className="text-verse text-[1.0625rem]">{evangile.titre || evangile.texte.slice(0, 140) + '…'}</p>
               <p className="text-sm text-gold-400 mt-2">{evangile.ref}</p>
             </>
           ) : (
             <>
-              <p className="text-verse text-[17px]">« {dailyVerse.text} »</p>
+              <p className="text-verse text-[1.0625rem]">« {dailyVerse.text} »</p>
               <p className="text-sm text-gold-400 mt-2">{dailyVerse.ref_fr}</p>
             </>
           )}
@@ -197,7 +197,7 @@ export default function Dashboard() {
               className="p-4 rounded-2xl bg-white/[0.04] border border-white/5 active:scale-[0.98] transition-transform min-h-[112px] flex flex-col justify-between">
               <Icon3D name={c.icon} size={36} />
               <div>
-                <p className="font-semibold text-slate-100 text-[15px]">{c.label}</p>
+                <p className="font-semibold text-slate-100 text-[0.9375rem]">{c.label}</p>
                 <p className="text-xs text-slate-500">{c.sub}</p>
               </div>
             </Link>

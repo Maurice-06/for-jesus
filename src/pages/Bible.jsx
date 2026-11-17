@@ -309,7 +309,7 @@ function BibleReader() {
                   initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                   className="absolute right-0 top-full mt-1 bg-navy-700 border border-navy-500 rounded-xl shadow-2xl z-20 min-w-[230px] overflow-hidden"
                 >
-                  <p className="px-3 pt-2 pb-1 text-[10px] text-slate-600 font-semibold uppercase tracking-wider">Français</p>
+                  <p className="px-3 pt-2 pb-1 text-[0.625rem] text-slate-600 font-semibold uppercase tracking-wider">Français</p>
                   {TRANSLATIONS.filter(t => t.lang === 'fr').map(t => (
                     <button key={t.id} onClick={() => { setTranslation(t.id); setShowTranslation(false) }}
                       className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
@@ -317,7 +317,7 @@ function BibleReader() {
                       }`}
                     >{t.label}</button>
                   ))}
-                  <p className="px-3 pt-2 pb-1 text-[10px] text-slate-600 font-semibold uppercase tracking-wider border-t border-navy-600 mt-1">English</p>
+                  <p className="px-3 pt-2 pb-1 text-[0.625rem] text-slate-600 font-semibold uppercase tracking-wider border-t border-navy-600 mt-1">English</p>
                   {TRANSLATIONS.filter(t => t.lang === 'en').map(t => (
                     <button key={t.id} onClick={() => { setTranslation(t.id); setShowTranslation(false) }}
                       className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
@@ -393,10 +393,10 @@ function BibleReader() {
                           : 'hover:bg-navy-800/50'
                       }`}
                     >
-                      <span className="text-[11px] text-gold-500 font-bold min-w-[20px] mt-1 flex-shrink-0 leading-tight">
+                      <span className="text-[0.6875rem] text-gold-500 font-bold min-w-[20px] mt-1 flex-shrink-0 leading-tight">
                         {v.verse}
                       </span>
-                      <p className="text-slate-200 leading-relaxed flex-1 text-[15px]">{v.text}</p>
+                      <p className="text-slate-200 leading-relaxed flex-1 text-[0.9375rem]">{v.text}</p>
                     </div>
                   )
                 })}
@@ -503,7 +503,7 @@ function LecturesDuJour() {
         {data.jour.slice(1).map(l => <p key={l} className="text-sm text-slate-400">{l}</p>)}
         {couleur && (
           <p className="text-xs text-slate-500 mt-2 flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${couleur.className}`} /> Couleur liturgique : {couleur.label}
+            <span className="w-2.5 h-2.5 rounded-full ring-1 ring-slate-500/50" style={{ backgroundColor: couleur.hex }} /> Couleur liturgique : {couleur.label}
           </p>
         )}
       </div>
@@ -529,11 +529,11 @@ function LecturesDuJour() {
               <p className="text-sm text-slate-300">{l.ref}</p>
             </div>
           </div>
-          {l.titre && <p className="font-serif italic text-[17px] text-slate-200 mb-3">{l.titre}</p>}
+          {l.titre && <p className="font-serif italic text-[1.0625rem] text-slate-200 mb-3">{l.titre}</p>}
           {l.acclamation && <p className="text-sm text-slate-400 italic whitespace-pre-line mb-3">{l.acclamation}</p>}
-          {l.refrain && <p className="text-[15px] font-semibold text-gold-200 whitespace-pre-line mb-3">R/ {l.refrain}</p>}
+          {l.refrain && <p className="text-[0.9375rem] font-semibold text-gold-200 whitespace-pre-line mb-3">R/ {l.refrain}</p>}
           {l.intro && <p className="text-sm text-slate-500 mb-2">{l.intro}</p>}
-          <p className="text-[17px] leading-[1.75] text-slate-100 whitespace-pre-line">{l.texte}</p>
+          <p className="text-[1.0625rem] leading-[1.75] text-slate-100 whitespace-pre-line">{l.texte}</p>
         </article>
       ))}
 

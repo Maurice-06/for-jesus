@@ -39,6 +39,8 @@ const EXPECTED = {
   fj_bibleLast: (v) => v === null || isPlainObject(v),
   fj_profile: isPlainObject,
   fj_neuvaine: (v) => v === null || isPlainObject(v),
+  fj_settings: isPlainObject,
+  // fj_lock volontairement exclu : le verrou et Face ID sont propres à chaque appareil
 }
 
 /**

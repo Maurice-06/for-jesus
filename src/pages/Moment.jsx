@@ -113,7 +113,7 @@ export default function Moment() {
                 ) : evangile ? (
                   <article>
                     {evangile.intro && <p className="text-sm text-slate-500 italic mb-3">{evangile.intro}</p>}
-                    <p className="font-serif text-[18px] leading-[1.75] text-slate-100 whitespace-pre-line">{evangile.texte}</p>
+                    <p className="font-serif text-[1.125rem] leading-[1.75] text-slate-100 whitespace-pre-line">{evangile.texte}</p>
                     <p className="text-xs text-slate-600 mt-4">Traduction liturgique officielle — AELF</p>
                   </article>
                 ) : (
@@ -171,7 +171,7 @@ export default function Moment() {
                 </div>
                 <textarea value={note} onChange={e => setNote(e.target.value)} maxLength={1000}
                   placeholder="Ce que je retiens de ce moment…"
-                  className="input min-h-[140px] text-[16px] leading-relaxed resize-none" />
+                  className="input min-h-[140px] text-[1rem] leading-relaxed resize-none" />
               </div>
             )}
 
@@ -198,9 +198,9 @@ export default function Moment() {
         {/* Bouton principal, toujours au même endroit (pouce) */}
         <div className="pt-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {current === 'fin' ? (
-            <Link to="/" className="btn-primary w-full min-h-[54px] flex items-center justify-center text-[16px]">Retour à l’accueil</Link>
+            <Link to="/" className="btn-primary w-full min-h-[54px] flex items-center justify-center text-[1rem]">Retour à l’accueil</Link>
           ) : (
-            <button onClick={next} className="btn-primary w-full min-h-[54px] text-[16px]">
+            <button onClick={next} className="btn-primary w-full min-h-[54px] text-[1rem]">
               {{
                 recueillement: 'Je suis prêt(e)',
                 parole: 'J’ai lu, je médite',

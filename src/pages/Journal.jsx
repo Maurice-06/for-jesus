@@ -168,7 +168,7 @@ function JournalForm({ initial, onSave, onCancel }) {
             placeholder="Écrivez librement ce que Dieu a mis sur votre cœur..."
             value={content}
             onChange={e => setContent(e.target.value)}
-            className="input text-[16px] leading-relaxed resize-none h-40"
+            className="input text-[1rem] leading-relaxed resize-none h-40"
           />
         </div>
 

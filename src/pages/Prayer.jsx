@@ -109,7 +109,7 @@ function Prier() {
                 {open === i && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                     <div className="px-4 pb-4">
-                      <p className="font-serif italic text-[17px] leading-relaxed text-slate-200">{p.text}</p>
+                      <p className="font-serif italic text-[1.0625rem] leading-relaxed text-slate-200">{p.text}</p>
                       <button onClick={() => { logActivity('priere', 2); setOpen(null) }} className="btn-primary w-full mt-4 min-h-[48px]">
                         J'ai prié cette prière
                       </button>
@@ -192,9 +192,9 @@ function Intentions() {
             <button type="button" onClick={() => setShowAdd(false)} aria-label="Fermer" className="w-10 h-10 -m-2 flex items-center justify-center text-slate-500"><X size={18} /></button>
           </div>
           <input value={title} onChange={e => setTitle(e.target.value)} maxLength={200} autoFocus
-            placeholder="Pour qui, pour quoi ?" className="input text-[16px]" />
+            placeholder="Pour qui, pour quoi ?" className="input text-[1rem]" />
           <textarea value={desc} onChange={e => setDesc(e.target.value)} maxLength={2000}
-            placeholder="Détails (facultatif)" className="input text-[16px] h-24 resize-none" />
+            placeholder="Détails (facultatif)" className="input text-[1rem] h-24 resize-none" />
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map(c => (
               <button key={c.id} type="button" onClick={() => setCat(c.id)}

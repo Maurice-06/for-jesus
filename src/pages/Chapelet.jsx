@@ -90,16 +90,16 @@ function StepPlayer({ steps, idx, setIdx, onFinish, onStop, beadColor, accent })
           ) : step.kind === 'litanies' ? (
             <div className="space-y-1.5 max-h-[55vh] overflow-y-auto pr-1">
               {LITANIES_LORETTE.map(([v, r], i) => (
-                <p key={i} className="text-[15px] leading-snug">
+                <p key={i} className="text-[0.9375rem] leading-snug">
                   <span className="text-slate-200">{v}</span> <span className="text-gold-300 italic">{r}</span>
                 </p>
               ))}
-              <p className="text-[15px] text-slate-300 italic pt-3">{LITANIES_ORAISON}</p>
+              <p className="text-[0.9375rem] text-slate-300 italic pt-3">{LITANIES_ORAISON}</p>
             </div>
           ) : (
             <>
               {step.note && <p className="text-sm text-slate-500 mb-2">{step.note}</p>}
-              <p className={`font-serif text-[17px] leading-[1.7] whitespace-pre-line ${step.kind === 'accompagnement' ? 'italic text-gold-100' : 'text-slate-100'}`}>
+              <p className={`font-serif text-[1.0625rem] leading-[1.7] whitespace-pre-line ${step.kind === 'accompagnement' ? 'italic text-gold-100' : 'text-slate-100'}`}>
                 {step.prayer}
               </p>
             </>
@@ -114,7 +114,7 @@ function StepPlayer({ steps, idx, setIdx, onFinish, onStop, beadColor, accent })
           <ChevronLeft size={20} />
         </button>
         <button onClick={() => (isLast ? onFinish() : setIdx(idx + 1))}
-          className="btn-primary flex-1 min-h-[56px] text-[16px] flex items-center justify-center gap-2">
+          className="btn-primary flex-1 min-h-[56px] text-[1rem] flex items-center justify-center gap-2">
           {isLast ? <><Check size={18} /> Amen — terminer</> : <>Suivant <ChevronRight size={18} /></>}
         </button>
       </div>
@@ -202,7 +202,7 @@ function Rosaire() {
                   <Icon3D name={m.icon} size={30} muted={!active} />
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold ${active ? m.accent : 'text-slate-300'}`}>{m.short}</p>
-                    <p className="text-[11px] text-slate-500">{m.days}{k === suggested ? ' · aujourd’hui' : ''}</p>
+                    <p className="text-[0.6875rem] text-slate-500">{m.days}{k === suggested ? ' · aujourd’hui' : ''}</p>
                   </div>
                 </button>
               )
@@ -227,7 +227,7 @@ function Rosaire() {
         ))}
       </div>
 
-      <button onClick={start} className="btn-primary w-full min-h-[56px] text-[16px]">
+      <button onClick={start} className="btn-primary w-full min-h-[56px] text-[1rem]">
         Commencer {s.mode === 'rosaire' ? 'le Rosaire' : `— ${MYSTERIES[setKey].label.toLowerCase()}`}
       </button>
     </div>
@@ -262,7 +262,7 @@ function DivineMercy() {
           l'Heure de la Miséricorde. Environ 10 minutes, sur un chapelet ordinaire.
         </p>
       </div>
-      <button onClick={() => update({ status: 'praying', idx: 0, startedAt: Date.now() })} className="btn-primary w-full min-h-[56px] text-[16px]">
+      <button onClick={() => update({ status: 'praying', idx: 0, startedAt: Date.now() })} className="btn-primary w-full min-h-[56px] text-[1rem]">
         Commencer le chapelet
       </button>
     </div>
@@ -316,7 +316,7 @@ function Neuvaine({ onPrayChaplet }) {
         <div className="rounded-3xl p-5 bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-400/20 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-rose-300">Jour {currentDay} sur 9</p>
           <h3 className="text-lg font-semibold text-slate-50 leading-snug">Pour {day.intention.charAt(0).toLowerCase() + day.intention.slice(1)}</h3>
-          <p className="font-serif italic text-[17px] leading-relaxed text-slate-200">{day.priere}</p>
+          <p className="font-serif italic text-[1.0625rem] leading-relaxed text-slate-200">{day.priere}</p>
           <p className="text-sm text-slate-400">Puis priez le chapelet de la Divine Miséricorde à cette intention.</p>
           <div className="flex flex-col gap-2 pt-1">
             <button onClick={onPrayChaplet} className="btn-secondary min-h-[48px]">Prier le chapelet</button>

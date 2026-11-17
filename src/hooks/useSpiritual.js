@@ -15,7 +15,7 @@ const uuidv4 = () =>
 export const STORAGE_KEYS = [
   'fj_dailyLogs', 'fj_prayerRequests', 'fj_journalEntries', 'fj_bookmarks',
   'fj_readingProgress', 'fj_goals', 'fj_activePlan', 'fj_planStart', 'fj_bibleLast',
-  'fj_profile', 'fj_neuvaine',
+  'fj_profile', 'fj_neuvaine', 'fj_settings',
 ]
 
 // ─── Activités : chaque onglet fait avancer le chemin ─────────────────────────

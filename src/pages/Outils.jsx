@@ -144,7 +144,7 @@ function ReadingPlans() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-slate-200 text-sm">{plan.name}</h3>
-                    {isActive && <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">Actif</span>}
+                    {isActive && <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[0.625rem]">Actif</span>}
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">{plan.days} jours</p>
                   {prog.done > 0 && (

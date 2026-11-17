@@ -4,6 +4,7 @@ import { useSpiritualContext } from '../context/SpiritualContext'
 import { STAGES, MINUTE_LADDER } from '../hooks/useSpiritual'
 import Icon3D from '../components/Icon3D'
 import PageHeader from '../components/PageHeader'
+import { DisplaySettings, ReminderSettings, LockSettings } from '../components/Settings'
 
 const TOOLS = [
   { to: '/progres', icon: 'chart', label: 'Mes statistiques', sub: 'Calendrier, minutes, lectures' },
@@ -43,7 +44,7 @@ export default function Chemin() {
           {STAGES.map((s, i) => (
             <div key={s.name} className="flex flex-col items-center gap-1 w-14">
               <Icon3D name={s.icon} size={30} muted={i > growth.stageIndex} />
-              <span className={`text-[10px] leading-tight text-center ${i <= growth.stageIndex ? 'text-slate-300' : 'text-slate-600'}`}>{s.min} j</span>
+              <span className={`text-[0.625rem] leading-tight text-center ${i <= growth.stageIndex ? 'text-slate-300' : 'text-slate-600'}`}>{s.min} j</span>
             </div>
           ))}
         </div>
@@ -80,7 +81,7 @@ export default function Chemin() {
                 {m.done && <span className="w-6 h-6 rounded-full bg-gold-500 text-navy-950 flex items-center justify-center"><Check size={14} strokeWidth={3} /></span>}
               </div>
               <p className={`text-sm leading-snug ${m.done ? 'text-slate-100 font-medium' : 'text-slate-400'}`}>{m.label}</p>
-              <div className="flex items-center justify-between text-[11px] text-slate-500">
+              <div className="flex items-center justify-between text-[0.6875rem] text-slate-500">
                 <span>{m.tab}</span>
                 {!m.done && m.progress && <span>{m.progress[0]}/{m.progress[1]}</span>}
               </div>
@@ -88,6 +89,11 @@ export default function Chemin() {
           ))}
         </div>
       </section>
+
+      {/* Réglages */}
+      <ReminderSettings />
+      <DisplaySettings />
+      <LockSettings />
 
       {/* Outils */}
       <section>

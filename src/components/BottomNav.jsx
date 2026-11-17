@@ -28,7 +28,7 @@ export default function BottomNav() {
                     <span className={`flex items-center justify-center w-11 h-8 rounded-full transition-all ${active ? 'bg-gold-500/15' : ''}`}>
                       <Icon3D name={icon || growth.stage.icon} size={24} muted={!active} />
                     </span>
-                    <span className={`text-[11px] leading-none ${active ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+                    <span className={`text-[0.6875rem] leading-none ${active ? 'font-semibold' : 'font-medium'}`}>{label}</span>
                   </>
                 )
               }}

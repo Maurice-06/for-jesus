@@ -22,7 +22,7 @@ export default function Sidebar() {
           <NavLink key={to} to={to} end={end}
             className={({ isActive }) => {
               const active = isActive || also.some(p => pathname.startsWith(p))
-              return `flex items-center gap-3 px-4 py-3 rounded-2xl text-[15px] transition-all ${
+              return `flex items-center gap-3 px-4 py-3 rounded-2xl text-[0.9375rem] transition-all ${
                 active ? 'bg-gold-500/10 text-gold-300 font-semibold' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 font-medium'
               }`
             }}

@@ -82,12 +82,12 @@ export async function fetchMesseDuJour(date = new Date(), { signal } = {}) {
 export const getEvangile = (data) =>
   data?.messes?.[0]?.lectures.find(l => l.type === 'evangile') || null
 
-// Couleur liturgique → pastille
+// Couleur liturgique → pastille (couleurs fixes : identiques en thème clair et sombre)
 export const LITURGICAL_COLORS = {
-  vert: { label: 'vert', className: 'bg-emerald-500' },
-  blanc: { label: 'blanc', className: 'bg-slate-100' },
-  rouge: { label: 'rouge', className: 'bg-red-500' },
-  violet: { label: 'violet', className: 'bg-violet-500' },
-  rose: { label: 'rose', className: 'bg-pink-400' },
-  noir: { label: 'noir', className: 'bg-slate-700' },
+  vert: { label: 'vert', hex: '#10b981' },
+  blanc: { label: 'blanc', hex: '#ffffff' },
+  rouge: { label: 'rouge', hex: '#ef4444' },
+  violet: { label: 'violet', hex: '#8b5cf6' },
+  rose: { label: 'rose', hex: '#f472b6' },
+  noir: { label: 'noir', hex: '#111827' },
 }

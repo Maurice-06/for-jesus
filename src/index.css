@@ -1,3 +1,4 @@
+@import './theme.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,10 +16,10 @@
   }
 
   body {
-    background-color: #070b14;
+    background-color: rgb(var(--c-navy-900));
     /* Prevent pull-to-refresh on mobile */
     overscroll-behavior-y: contain;
-    color: #f1f5f9;
+    color: rgb(var(--c-slate-100));
     font-family: 'Inter', system-ui, sans-serif;
     min-height: 100vh;
   }
@@ -29,16 +30,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #0c1120;
+    background: rgb(var(--c-navy-800));
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: rgb(var(--c-navy-500));
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: rgb(var(--c-navy-400));
   }
 }
 
@@ -54,8 +55,8 @@
 
   .card-glass {
     @apply rounded-2xl p-5 shadow-lg;
-    background: rgba(15, 22, 41, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgb(var(--c-navy-800) / 0.7);
+    border: 1px solid rgb(var(--c-white) / 0.06);
     backdrop-filter: blur(12px);
   }
 

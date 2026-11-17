@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 import { SpiritualProvider } from './context/SpiritualContext'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
+import LockGate from './components/LockGate'
+import { useSettings } from './hooks/useSettings'
 
 // Chaque page n'est téléchargée que lorsqu'on l'ouvre (démarrage plus rapide sur mobile)
 const Bible = lazy(() => import('./pages/Bible'))
@@ -33,8 +35,10 @@ function NotFound() {
 const page = (el) => <Suspense fallback={<PageLoader />}>{el}</Suspense>
 
 export default function App() {
+  useSettings() // thème et taille du texte, appliqués en direct
   return (
     <BrowserRouter>
+      <LockGate>
       <SpiritualProvider>
         <Routes>
           {/* Parcours guidé en plein écran, sans barre de navigation */}
@@ -52,6 +56,7 @@ export default function App() {
           </Route>
         </Routes>
       </SpiritualProvider>
+      </LockGate>
     </BrowserRouter>
   )
 }

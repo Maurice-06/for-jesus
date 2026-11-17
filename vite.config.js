@@ -8,7 +8,7 @@ export default defineConfig({
     // Appli installable sur l'écran d'accueil + fonctionnement hors ligne
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'cross.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'cross.svg', 'theme-init.js'],
       manifest: {
         name: 'For Jesus — Compagnon spirituel',
         short_name: 'For Jesus',

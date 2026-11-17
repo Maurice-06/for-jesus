@@ -1,0 +1,107 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Thèmes : valeurs « R G B » utilisées par tailwind.config.js
+   Sombre par défaut ; html.light pour le mode clair.
+   Tailles de texte : html.text-large / html.text-xlarge
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+  --c-white: 255 255 255;
+
+  --c-navy-950: 4 7 15;
+  --c-navy-900: 7 11 20;
+  --c-navy-800: 12 17 32;
+  --c-navy-700: 17 24 41;
+  --c-navy-600: 22 32 53;
+  --c-navy-500: 30 45 74;
+  --c-navy-400: 40 58 94;
+
+  --c-slate-50: 248 250 252;
+  --c-slate-100: 241 245 249;
+  --c-slate-200: 226 232 240;
+  --c-slate-300: 203 213 225;
+  --c-slate-400: 148 163 184;
+  --c-slate-500: 100 116 139;
+  --c-slate-600: 71 85 105;
+  --c-slate-700: 51 65 85;
+
+  --c-gold-50: 255 251 235;
+  --c-gold-100: 254 243 199;
+  --c-gold-200: 253 230 138;
+  --c-gold-300: 252 211 77;
+  --c-gold-400: 251 191 36;
+  --c-gold-500: 245 158 11;
+  --c-gold-600: 217 119 6;
+  --c-gold-700: 180 83 9;
+
+  --c-spirit-400: 167 139 250;
+  --c-emerald-200: 167 243 208;
+  --c-emerald-300: 110 231 183;
+  --c-emerald-400: 52 211 153;
+  --c-rose-200: 254 205 211;
+  --c-rose-300: 253 164 175;
+  --c-sky-300: 125 211 252;
+  --c-amber-300: 252 211 77;
+  --c-amber-400: 251 191 36;
+  --c-red-400: 248 113 113;
+  --c-blue-400: 96 165 250;
+  --c-orange-400: 251 146 60;
+  --c-yellow-400: 250 204 21;
+  --c-indigo-400: 129 140 248;
+}
+
+/* Mode clair : papier chaud, encre sombre, or plus profond pour rester lisible */
+html.light {
+  color-scheme: light;
+  --c-white: 41 33 20;
+
+  --c-navy-950: 4 7 15;          /* texte sur les boutons dorés : reste sombre */
+  --c-navy-900: 248 245 238;     /* fond de page */
+  --c-navy-800: 255 255 255;
+  --c-navy-700: 243 239 230;
+  --c-navy-600: 233 227 214;
+  --c-navy-500: 216 207 190;
+  --c-navy-400: 190 180 160;
+
+  --c-slate-50: 23 20 15;
+  --c-slate-100: 33 29 23;
+  --c-slate-200: 51 46 38;
+  --c-slate-300: 71 65 56;
+  --c-slate-400: 92 86 76;
+  --c-slate-500: 112 106 95;
+  --c-slate-600: 140 133 120;
+  --c-slate-700: 170 163 150;
+
+  --c-gold-50: 120 53 15;
+  --c-gold-100: 120 53 15;
+  --c-gold-200: 146 64 14;
+  --c-gold-300: 161 82 7;
+  --c-gold-400: 180 83 9;
+  --c-gold-500: 230 138 0;
+  --c-gold-600: 180 83 9;
+  --c-gold-700: 146 64 14;
+
+  --c-spirit-400: 109 40 217;
+  --c-emerald-200: 4 120 87;
+  --c-emerald-300: 4 120 87;
+  --c-emerald-400: 5 150 105;
+  --c-rose-200: 190 18 60;
+  --c-rose-300: 190 18 60;
+  --c-sky-300: 3 105 161;
+  --c-amber-300: 180 83 9;
+  --c-amber-400: 180 83 9;
+  --c-red-400: 220 38 38;
+  --c-blue-400: 37 99 235;
+  --c-orange-400: 234 88 12;
+  --c-yellow-400: 161 98 7;
+  --c-indigo-400: 79 70 229;
+}
+
+/* Taille du texte (tout est en rem : texte, espacements, boutons suivent) */
+html.text-large { font-size: 112.5%; }
+html.text-xlarge { font-size: 125%; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
