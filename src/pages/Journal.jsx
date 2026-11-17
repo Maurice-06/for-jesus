@@ -3,10 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, Search, Edit3 } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import ConfirmButton from '../components/ConfirmButton'
+import { formatDay } from '../utils/dates'
 import Icon3D from '../components/Icon3D'
 import PageHeader from '../components/PageHeader'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
 
 const MOODS = [
   { id: 'joyful', label: 'Joyeux/se', icon3d: 'sun', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
@@ -30,7 +29,7 @@ const REFLECTION_PROMPTS = [
 function EntryCard({ entry, onDelete, onEdit }) {
   const [expanded, setExpanded] = useState(false)
   const mood = MOODS.find(m => m.id === entry.mood)
-  const dateStr = format(parseISO(entry.date + 'T00:00:00'), 'EEEE d MMMM yyyy', { locale: fr })
+  const dateStr = formatDay(entry.date, 'EEEE d MMMM yyyy')
 
   return (
     <motion.div

@@ -29,6 +29,11 @@ const isDateKey = (k) => /^\d{4}-\d{2}-\d{2}$/.test(k)
 const isDateStr = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v))
 const SAFE_KEY = (k) => k !== '__proto__' && k !== 'constructor' && k !== 'prototype'
 
+const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '')
+const cleanList = (list, fix) => list
+  .filter(item => isPlainObject(item) && isDateStr(item.date))
+  .map((item, i) => fix({ ...item, id: typeof item.id === 'string' && item.id ? item.id.slice(0, 64) : `import-${Date.now()}-${i}` }))
+
 // Nettoyage en profondeur des structures sensibles
 const CLEAN = {
   fj_dailyLogs: (v) => Object.fromEntries(Object.entries(v)
@@ -42,6 +47,19 @@ const CLEAN = {
         ? Object.fromEntries(Object.entries(log.activities).filter(([a, n]) => Object.hasOwn(ACTIVITIES, a) && Number.isFinite(n) && n >= 0))
         : {},
     }])),
+  // Listes : chaque élément doit avoir un identifiant et une date valide
+  fj_journalEntries: (v) => cleanList(v, (e) => ({
+    ...e, content: str(e.content, 20000), verse: str(e.verse, 300), mood: str(e.mood, 40),
+    gratitude: Array.isArray(e.gratitude) ? e.gratitude.filter(g => typeof g === 'string').map(g => g.slice(0, 200)) : [],
+  })),
+  fj_prayerRequests: (v) => cleanList(v, (r) => ({
+    ...r, title: str(r.title, 200), description: str(r.description, 2000), category: str(r.category, 40),
+    answered: !!r.answered, answeredDate: isDateStr(r.answeredDate) ? r.answeredDate : null,
+  })).filter(r => r.title),
+  fj_bookmarks: (v) => cleanList(v, (b) => ({
+    ...b, bookId: str(b.bookId, 40), bookName: str(b.bookName, 60), text: str(b.text, 5000), note: str(b.note, 1000),
+    chapter: Number.isInteger(b.chapter) ? b.chapter : 1, verse: Number.isInteger(b.verse) ? b.verse : 1,
+  })),
   fj_readingProgress: (v) => Object.fromEntries(Object.entries(v).filter(([k, d]) => SAFE_KEY(k) && /^[\w+-]+-\d+$/.test(k) && isDateKey(String(d)))),
 }
 

@@ -8,6 +8,7 @@ import { useSpiritualContext } from '../context/SpiritualContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import Icon3D from '../components/Icon3D'
 import Tabs from '../components/Tabs'
+import { formatDay } from '../utils/dates'
 import {
   MYSTERIES, MYSTERY_ORDER, getTodayMystery, buildRosarySteps, buildMercySteps,
   LITANIES_LORETTE, LITANIES_ORAISON, NEUVAINE, nextDivineMercySunday,
@@ -325,7 +326,7 @@ function Neuvaine({ onPrayChaplet }) {
             </button>
           </div>
           {nv?.startedOn && (
-            <p className="text-xs text-slate-500">Commencée le {format(parseISO(nv.startedOn), 'd MMMM', { locale: fr })}
+            <p className="text-xs text-slate-500">Commencée le {formatDay(nv.startedOn, 'd MMMM')}
               {differenceInCalendarDays(new Date(), parseISO(nv.startedOn)) > doneCount ? ' · un jour manqué ? Reprenez simplement là où vous en êtes.' : ''}</p>
           )}
         </div>

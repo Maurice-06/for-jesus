@@ -4,6 +4,7 @@ import { SpiritualProvider, useSpiritualContext } from './context/SpiritualConte
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import LockGate from './components/LockGate'
+import ErrorBoundary from './components/ErrorBoundary'
 import { useSettings } from './hooks/useSettings'
 
 // Chaque page n'est téléchargée que lorsqu'on l'ouvre (démarrage plus rapide sur mobile)
@@ -46,6 +47,7 @@ const page = (el) => <Suspense fallback={<PageLoader />}>{el}</Suspense>
 export default function App() {
   useSettings() // thème et taille du texte, appliqués en direct
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <LockGate>
       <SpiritualProvider>
@@ -70,5 +72,6 @@ export default function App() {
       </SpiritualProvider>
       </LockGate>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }

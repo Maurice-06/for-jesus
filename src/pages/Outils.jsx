@@ -9,10 +9,10 @@ import { useSpiritualContext } from '../context/SpiritualContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
 import ConfirmButton from '../components/ConfirmButton'
+import { formatDay } from '../utils/dates'
 import Icon3D from '../components/Icon3D'
 import PageHeader from '../components/PageHeader'
 import { exportBackup, importBackup, requestPersistentStorage } from '../utils/backup'
-import { fr } from 'date-fns/locale'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -461,7 +461,7 @@ function Bookmarks() {
                 </button>
                 <p className="text-sm text-slate-300 leading-relaxed line-clamp-3 italic">« {bm.text} »</p>
                 <p className="text-xs text-slate-600 mt-1.5">
-                  {format(parseISO(bm.date + 'T00:00:00'), 'd MMM yyyy', { locale: fr })}
+                  {formatDay(bm.date)}
                 </p>
               </div>
               <ConfirmButton onConfirm={() => removeBookmark(bm.id)} label="Retirer" size={15} />

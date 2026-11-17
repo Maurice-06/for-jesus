@@ -2,11 +2,10 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, CheckCircle2, ChevronDown, X, Play, Square } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import ConfirmButton from '../components/ConfirmButton'
+import { formatDay } from '../utils/dates'
 import Icon3D from '../components/Icon3D'
 import PageHeader from '../components/PageHeader'
 import Tabs from '../components/Tabs'
@@ -137,8 +136,8 @@ function RequestCard({ req, onAnswer, onDelete }) {
         <div className="flex-1 min-w-0">
           <p className={`font-medium ${req.answered ? 'text-slate-400' : 'text-slate-100'}`}>{req.title}</p>
           <p className="text-xs text-slate-500 mt-0.5">
-            {cat.label} · {format(parseISO(req.date + 'T00:00:00'), 'd MMM yyyy', { locale: fr })}
-            {req.answered && req.answeredDate && <span className="text-emerald-400"> · exaucée le {format(parseISO(req.answeredDate + 'T00:00:00'), 'd MMM', { locale: fr })}</span>}
+            {cat.label}{formatDay(req.date) && ` · ${formatDay(req.date)}`}
+            {req.answered && formatDay(req.answeredDate) && <span className="text-emerald-400"> · exaucée le {formatDay(req.answeredDate, 'd MMM')}</span>}
           </p>
           {req.description && (
             <>

@@ -1,0 +1,7 @@
+# Fichiers à ne pas envoyer à Vercel
+node_modules
+dist
+dev-dist
+.DS_Store
+._*
+**/._*
