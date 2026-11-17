@@ -8,29 +8,29 @@ export const SIGNE_DE_CROIX = `Au nom du Père, et du Fils, et du Saint-Esprit. 
 
 export const NOTRE_PERE = `Notre Père, qui es aux cieux, que ton nom soit sanctifié, que ton règne vienne, que ta volonté soit faite sur la terre comme au ciel. Donne-nous aujourd'hui notre pain de ce jour. Pardonne-nous nos offenses, comme nous pardonnons aussi à ceux qui nous ont offensés. Et ne nous laisse pas entrer en tentation, mais délivre-nous du mal. Amen.`
 
-export const JE_VOUS_SALUE = `Je vous salue Marie, pleine de grâce ; le Seigneur est avec vous. Vous êtes bénie entre toutes les femmes, et Jésus, le fruit de vos entrailles, est béni. Sainte Marie, Mère de Dieu, priez pour nous, pauvres pécheurs, maintenant et à l'heure de notre mort. Amen.`
+const JE_VOUS_SALUE = `Je vous salue Marie, pleine de grâce ; le Seigneur est avec vous. Vous êtes bénie entre toutes les femmes, et Jésus, le fruit de vos entrailles, est béni. Sainte Marie, Mère de Dieu, priez pour nous, pauvres pécheurs, maintenant et à l'heure de notre mort. Amen.`
 
 /** Je vous salue Marie avec clausule (petite phrase méditative après « Jésus ») */
-export const aveAvecClausule = (clausule) =>
+const aveAvecClausule = (clausule) =>
   `Je vous salue Marie, pleine de grâce ; le Seigneur est avec vous. Vous êtes bénie entre toutes les femmes, et Jésus, le fruit de vos entrailles, est béni — Jésus ${clausule}. Sainte Marie, Mère de Dieu, priez pour nous, pauvres pécheurs, maintenant et à l'heure de notre mort. Amen.`
 
-export const GLOIRE_AU_PERE = `Gloire au Père, et au Fils, et au Saint-Esprit, comme il était au commencement, maintenant et toujours, et pour les siècles des siècles. Amen.`
+const GLOIRE_AU_PERE = `Gloire au Père, et au Fils, et au Saint-Esprit, comme il était au commencement, maintenant et toujours, et pour les siècles des siècles. Amen.`
 
-export const O_MON_JESUS = `Ô mon Jésus, pardonnez-nous nos péchés, préservez-nous du feu de l'enfer, et conduisez au ciel toutes les âmes, spécialement celles qui ont le plus besoin de votre miséricorde. Amen.`
+const O_MON_JESUS = `Ô mon Jésus, pardonnez-nous nos péchés, préservez-nous du feu de l'enfer, et conduisez au ciel toutes les âmes, spécialement celles qui ont le plus besoin de votre miséricorde. Amen.`
 
-export const JE_CROIS = `Je crois en Dieu, le Père tout-puissant, créateur du ciel et de la terre. Et en Jésus-Christ, son Fils unique, notre Seigneur, qui a été conçu du Saint-Esprit, est né de la Vierge Marie, a souffert sous Ponce Pilate, a été crucifié, est mort et a été enseveli, est descendu aux enfers, le troisième jour est ressuscité des morts, est monté aux cieux, est assis à la droite de Dieu le Père tout-puissant, d'où il viendra juger les vivants et les morts. Je crois en l'Esprit-Saint, à la sainte Église catholique, à la communion des saints, à la rémission des péchés, à la résurrection de la chair, à la vie éternelle. Amen.`
+const JE_CROIS = `Je crois en Dieu, le Père tout-puissant, créateur du ciel et de la terre. Et en Jésus-Christ, son Fils unique, notre Seigneur, qui a été conçu du Saint-Esprit, est né de la Vierge Marie, a souffert sous Ponce Pilate, a été crucifié, est mort et a été enseveli, est descendu aux enfers, le troisième jour est ressuscité des morts, est monté aux cieux, est assis à la droite de Dieu le Père tout-puissant, d'où il viendra juger les vivants et les morts. Je crois en l'Esprit-Saint, à la sainte Église catholique, à la communion des saints, à la rémission des péchés, à la résurrection de la chair, à la vie éternelle. Amen.`
 
-export const SALVE_REGINA = `Salut, ô Reine, Mère de miséricorde, notre vie, notre douceur, notre espérance, salut ! Enfants d'Ève, exilés, nous crions vers vous ; vers vous nous soupirons, gémissant et pleurant dans cette vallée de larmes. Ô vous, notre avocate, tournez vers nous vos regards miséricordieux. Et, après cet exil, montrez-nous Jésus, le fruit béni de vos entrailles. Ô clémente, ô miséricordieuse, ô douce Vierge Marie !
+const SALVE_REGINA = `Salut, ô Reine, Mère de miséricorde, notre vie, notre douceur, notre espérance, salut ! Enfants d'Ève, exilés, nous crions vers vous ; vers vous nous soupirons, gémissant et pleurant dans cette vallée de larmes. Ô vous, notre avocate, tournez vers nous vos regards miséricordieux. Et, après cet exil, montrez-nous Jésus, le fruit béni de vos entrailles. Ô clémente, ô miséricordieuse, ô douce Vierge Marie !
 — Priez pour nous, sainte Mère de Dieu.
 — Afin que nous soyons rendus dignes des promesses du Christ.`
 
-export const SOUS_L_ABRI = `Sous l'abri de ta miséricorde, nous nous réfugions, sainte Mère de Dieu. Ne méprise pas nos prières quand nous sommes dans l'épreuve, mais de tous les dangers délivre-nous toujours, Vierge glorieuse et bénie.`
+const SOUS_L_ABRI = `Sous l'abri de ta miséricorde, nous nous réfugions, sainte Mère de Dieu. Ne méprise pas nos prières quand nous sommes dans l'épreuve, mais de tous les dangers délivre-nous toujours, Vierge glorieuse et bénie.`
 
-export const SAINT_MICHEL = `Saint Michel Archange, défendez-nous dans le combat ; soyez notre secours contre la malice et les embûches du démon. Que Dieu lui fasse sentir son empire, nous vous en supplions ; et vous, Prince de la milice céleste, par la force divine, repoussez en enfer Satan et les autres esprits mauvais qui rôdent dans le monde pour la perte des âmes. Amen.`
+const SAINT_MICHEL = `Saint Michel Archange, défendez-nous dans le combat ; soyez notre secours contre la malice et les embûches du démon. Que Dieu lui fasse sentir son empire, nous vous en supplions ; et vous, Prince de la milice céleste, par la force divine, repoussez en enfer Satan et les autres esprits mauvais qui rôdent dans le monde pour la perte des âmes. Amen.`
 
-export const OFFRANDE_ROSAIRE = `Seigneur Jésus, je t'offre ce chapelet que je vais prier en méditant les mystères de ta vie, de ta mort et de ta résurrection. Avec Marie, ta Mère et la mienne, je te confie mes intentions et celles du monde entier. Donne-moi de prier avec un cœur simple, attentif et confiant. Amen.`
+const OFFRANDE_ROSAIRE = `Seigneur Jésus, je t'offre ce chapelet que je vais prier en méditant les mystères de ta vie, de ta mort et de ta résurrection. Avec Marie, ta Mère et la mienne, je te confie mes intentions et celles du monde entier. Donne-moi de prier avec un cœur simple, attentif et confiant. Amen.`
 
-export const PRIERE_FINALE_ROSAIRE = `Ô Dieu, dont le Fils unique, par sa vie, sa mort et sa résurrection, nous a obtenu les récompenses du salut éternel, accorde-nous, en méditant ces mystères du très saint Rosaire de la bienheureuse Vierge Marie, d'imiter ce qu'ils contiennent et d'obtenir ce qu'ils promettent. Par le Christ notre Seigneur. Amen.`
+const PRIERE_FINALE_ROSAIRE = `Ô Dieu, dont le Fils unique, par sa vie, sa mort et sa résurrection, nous a obtenu les récompenses du salut éternel, accorde-nous, en méditant ces mystères du très saint Rosaire de la bienheureuse Vierge Marie, d'imiter ce qu'ils contiennent et d'obtenir ce qu'ils promettent. Par le Christ notre Seigneur. Amen.`
 
 // ─── Litanies de la Vierge Marie (Lorette) ────────────────────────────────────
 const PRIEZ = 'priez pour nous.'
@@ -234,7 +234,7 @@ export function buildRosarySteps(sets, { clausules = true, litanies = true } = {
 }
 
 // ─── Chapelet de la Divine Miséricorde ────────────────────────────────────────
-export const MISERICORDE = {
+const MISERICORDE = {
   ouverture1: `Tu as expiré, Jésus, mais la source de vie a jailli pour les âmes, et l'océan de la miséricorde s'est ouvert pour le monde entier. Ô Source de vie, insondable Miséricorde divine, enveloppe le monde entier et répands-toi sur nous.`,
   ouverture2: `Ô Sang et Eau, qui avez jailli du Cœur de Jésus comme une source de miséricorde pour nous, j'ai confiance en vous !`,
   grosGrain: `Père éternel, je t'offre le Corps et le Sang, l'Âme et la Divinité de ton Fils bien-aimé, notre Seigneur Jésus-Christ, en réparation de nos péchés et de ceux du monde entier.`,
@@ -290,7 +290,7 @@ export const NEUVAINE = [
 ]
 
 /** Date de Pâques (calendrier grégorien) */
-export function easterDate(year) {
+function easterDate(year) {
   const a = year % 19, b = Math.floor(year / 100), c = year % 100
   const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25)
   const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30

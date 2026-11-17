@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Delete, ScanFace } from 'lucide-react'
 
 /**
@@ -12,9 +12,11 @@ export default function PinPad({ value, onChange, length = 4, maxLength = 6, onB
   const press = (d) => { if (!disabled && value.length < maxLength) onChange(value + d) }
   const erase = () => { if (!disabled) onChange(value.slice(0, -1)) }
 
-  // Clavier physique (ordinateur)
+  const root = useRef(null)
+  // Clavier physique (ordinateur) — seulement si ce pavé est visible à l'écran
   useEffect(() => {
     const onKey = (e) => {
+      if (!root.current || root.current.offsetParent === null) return
       if (/^\d$/.test(e.key)) press(e.key)
       else if (e.key === 'Backspace') erase()
     }
@@ -24,7 +26,7 @@ export default function PinPad({ value, onChange, length = 4, maxLength = 6, onB
 
   const dots = Math.max(length, value.length)
   return (
-    <div className="flex flex-col items-center gap-7">
+    <div ref={root} className="flex flex-col items-center gap-7">
       <div className={`flex gap-3.5 ${error ? 'animate-[shake_0.35s]' : ''}`} aria-live="polite" aria-label={`${value.length} chiffre${value.length > 1 ? 's' : ''} saisi${value.length > 1 ? 's' : ''}`}>
         {Array.from({ length: dots }, (_, i) => (
           <span key={i} className={`w-3.5 h-3.5 rounded-full border-2 transition-all ${

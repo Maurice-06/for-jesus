@@ -1,14 +1,12 @@
 // Icônes 3D (Microsoft Fluent Emoji, licence MIT) — servies depuis /public/icons3d,
 // incluses dans l'appli et disponibles hors ligne.
-export const ICONS_3D = [
-  'book', 'hands', 'beads', 'dove', 'candle', 'cross', 'journal', 'sunrise', 'rose', 'fire',
-  'seedling', 'herb', 'sunflower', 'tree', 'sparkles', 'heart', 'church', 'bell', 'crown',
-  'bulb', 'anchor', 'droplet', 'blood', 'star', 'sun', 'scroll', 'calendar', 'bookmark',
-  'chart', 'trophy', 'save', 'mirror', 'writing', 'hourglass',
-]
+// Noms disponibles (fichiers public/icons3d/<nom>.webp) :
+// book hands beads dove candle cross journal sunrise rose seedling herb sunflower
+// tree sparkles heart bell crown bulb anchor droplet blood star sun scroll
+// calendar bookmark chart save mirror writing hourglass
 
 /**
- * @param {string} name   une des clés de ICONS_3D
+ * @param {string} name   un des noms ci-dessus
  * @param {number} size   taille en pixels
  * @param {boolean} muted grisée (ex. onglet inactif, étape non atteinte)
  */

@@ -47,7 +47,7 @@ export const STAGES = [
 // Objectif de prière quotidien : on démarre petit et on augmente pas à pas
 export const MINUTE_LADDER = [2, 5, 10, 15, 20, 30]
 
-const DEFAULT_PROFILE = { dailyMinutes: 2, suggestSnoozeUntil: null, lastVisit: null }
+const DEFAULT_PROFILE = { name: '', onboarded: false, dailyMinutes: 2, suggestSnoozeUntil: null, lastVisit: null }
 
 export function useSpiritual() {
   const [dailyLogs, setDailyLogs] = useLocalStorage('fj_dailyLogs', {})
@@ -252,6 +252,14 @@ export function useSpiritual() {
     ? { from: profile.dailyMinutes, to: nextMinutes, days: goalMetDays }
     : null
   const setDailyMinutes = (m) => setProfile(p => ({ ...DEFAULT_PROFILE, ...p, dailyMinutes: m, suggestSnoozeUntil: null }))
+  const setName = (name) =>
+    setProfile(p => ({ ...DEFAULT_PROFILE, ...p, name: String(name || '').replace(/\s+/g, ' ').trim().slice(0, 40) }))
+  const completeOnboarding = ({ name, dailyMinutes } = {}) =>
+    setProfile(p => ({
+      ...DEFAULT_PROFILE, ...p, onboarded: true,
+      ...(name !== undefined ? { name: String(name).replace(/\s+/g, ' ').trim().slice(0, 40) } : {}),
+      ...(MINUTE_LADDER.includes(dailyMinutes) ? { dailyMinutes } : {}),
+    }))
   const snoozeGoalSuggestion = () =>
     setProfile(p => ({ ...DEFAULT_PROFILE, ...p, suggestSnoozeUntil: format(addDays(new Date(), 7), 'yyyy-MM-dd') }))
 
@@ -303,7 +311,7 @@ export function useSpiritual() {
   const getEncouragementMessage = () => {
     const log = getTodayLog()
     if (returnGap >= 3 && !log.prayed && !log.bibleRead) {
-      return { type: 'welcome', message: "Content de vous revoir. Dieu ne compte pas les jours d'absence : il vous attendait. Recommencez simplement, avec quelques minutes." }
+      return { type: 'welcome', message: `Content de vous revoir${profile.name ? `, ${profile.name}` : ''}. Dieu ne compte pas les jours d'absence : il vous attendait. Recommencez simplement, avec quelques minutes.` }
     }
     if (!log.prayed && !log.bibleRead) {
       return { type: 'info', message: `Aujourd'hui, offrez à Dieu ${profile.dailyMinutes} minutes. C'est assez pour commencer.` }
@@ -334,7 +342,7 @@ export function useSpiritual() {
     // Signets
     addBookmark, removeBookmark, removeBookmarkAt, isBookmarked,
     // Objectifs
-    setGoals, setDailyMinutes, snoozeGoalSuggestion,
+    setGoals, setDailyMinutes, snoozeGoalSuggestion, setName, completeOnboarding,
     // UX
     getEncouragementMessage,
     today,

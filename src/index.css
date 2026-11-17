@@ -90,60 +90,10 @@
 }
 
 @layer utilities {
-  .text-gradient-gold {
-    background: linear-gradient(135deg, #f59e0b, #fbbf24, #fde68a);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .text-gradient-spirit {
-    background: linear-gradient(135deg, #8b5cf6, #a78bfa, #c4b5fd);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .glow-gold {
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.2), 0 0 60px rgba(245, 158, 11, 0.05);
-  }
-
-  .glow-spirit {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.2), 0 0 60px rgba(139, 92, 246, 0.05);
-  }
-
   .bg-mesh {
     background-image:
       radial-gradient(at 40% 20%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
       radial-gradient(at 80% 0%, rgba(245, 158, 11, 0.06) 0px, transparent 50%),
       radial-gradient(at 0% 50%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
   }
-}
-
-/* Bible verse transition */
-.verse-enter {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-.verse-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
-}
-
-/* Animated underline for nav items */
-.nav-item-active {
-  position: relative;
-}
-
-.nav-item-active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: #f59e0b;
-  border-radius: 1px;
 }

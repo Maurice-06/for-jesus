@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from '../hooks/useSpiritual'
+import { STORAGE_KEYS, ACTIVITIES } from '../hooks/useSpiritual'
 
 const BACKUP_FORMAT = 'for-jesus-backup'
 const MAX_SIZE = 5 * 1024 * 1024 // 5 Mo
@@ -25,6 +25,25 @@ export function exportBackup() {
 }
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
+const isDateKey = (k) => /^\d{4}-\d{2}-\d{2}$/.test(k)
+const isDateStr = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v))
+const SAFE_KEY = (k) => k !== '__proto__' && k !== 'constructor' && k !== 'prototype'
+
+// Nettoyage en profondeur des structures sensibles
+const CLEAN = {
+  fj_dailyLogs: (v) => Object.fromEntries(Object.entries(v)
+    .filter(([k, log]) => isDateKey(k) && isPlainObject(log))
+    .map(([k, log]) => [k, {
+      prayed: !!log.prayed,
+      bibleRead: !!log.bibleRead,
+      prayerMinutes: Number.isFinite(log.prayerMinutes) ? Math.max(0, Math.min(1440, log.prayerMinutes)) : 0,
+      chaptersRead: Array.isArray(log.chaptersRead) ? log.chaptersRead.filter(c => typeof c === 'string').slice(0, 2000) : [],
+      activities: isPlainObject(log.activities)
+        ? Object.fromEntries(Object.entries(log.activities).filter(([a, n]) => Object.hasOwn(ACTIVITIES, a) && Number.isFinite(n) && n >= 0))
+        : {},
+    }])),
+  fj_readingProgress: (v) => Object.fromEntries(Object.entries(v).filter(([k, d]) => SAFE_KEY(k) && /^[\w+-]+-\d+$/.test(k) && isDateKey(String(d)))),
+}
 
 // Type attendu pour chaque clé : on refuse tout le reste
 const EXPECTED = {
@@ -35,7 +54,7 @@ const EXPECTED = {
   fj_readingProgress: isPlainObject,
   fj_goals: isPlainObject,
   fj_activePlan: (v) => v === null || typeof v === 'string',
-  fj_planStart: (v) => v === null || typeof v === 'string',
+  fj_planStart: (v) => v === null || isDateStr(v),
   fj_bibleLast: (v) => v === null || isPlainObject(v),
   fj_profile: isPlainObject,
   fj_neuvaine: (v) => v === null || isPlainObject(v),
@@ -63,7 +82,7 @@ export async function importBackup(file) {
   if (entries.length === 0) throw new Error('La sauvegarde est vide.')
   for (const [key, raw] of entries) {
     // Listes : on ne garde que des objets, avec des sous-listes bien formées
-    const value = Array.isArray(raw)
+    const value = CLEAN[key] ? CLEAN[key](raw) : Array.isArray(raw)
       ? raw.filter(isPlainObject).map(item =>
           'gratitude' in item && !Array.isArray(item.gratitude) ? { ...item, gratitude: [] } : item)
       : raw

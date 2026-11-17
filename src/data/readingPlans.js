@@ -4,7 +4,7 @@
 import { ALL_BOOKS } from './bibleBooks'
 
 // Plan 1: Bible en 1 an (1189 chapitres / 365 jours ≈ 3-4 ch/jour)
-export const PLAN_BIBLE_1AN = (() => {
+const PLAN_BIBLE_1AN = (() => {
   const all = []
   ALL_BOOKS.forEach(book => {
     for (let c = 1; c <= book.chapters; c++) {
@@ -15,7 +15,7 @@ export const PLAN_BIBLE_1AN = (() => {
 })()
 
 // Plan 2: Nouveau Testament en 90 jours (~2-3 ch/jour)
-export const PLAN_NT_90 = (() => {
+const PLAN_NT_90 = (() => {
   const nt = ALL_BOOKS.slice(39) // indices 39-65
   const all = []
   nt.forEach(book => {
@@ -27,7 +27,7 @@ export const PLAN_NT_90 = (() => {
 })()
 
 // Plan 3: Psaumes en 30 jours (150 psaumes / 30 = 5/jour)
-export const PLAN_PSAUMES_30 = (() => {
+const PLAN_PSAUMES_30 = (() => {
   const all = []
   for (let c = 1; c <= 150; c++) {
     all.push({ bookId: 'psalms', bookName: 'Psaumes', chapter: c, key: `psalms-${c}` })
@@ -36,7 +36,7 @@ export const PLAN_PSAUMES_30 = (() => {
 })()
 
 // Plan 4: Évangiles en 40 jours (Mt 28 + Mc 16 + Lc 24 + Jn 21 = 89 ch / 40 ≈ 2/jour)
-export const PLAN_EVANGILES_40 = (() => {
+const PLAN_EVANGILES_40 = (() => {
   const gospels = ['matthew', 'mark', 'luke', 'john']
   const all = []
   ALL_BOOKS.filter(b => gospels.includes(b.id)).forEach(book => {
@@ -48,7 +48,7 @@ export const PLAN_EVANGILES_40 = (() => {
 })()
 
 // Plan 5: Proverbes en 31 jours (1 chapitre/jour)
-export const PLAN_PROVERBES_31 = (() => {
+const PLAN_PROVERBES_31 = (() => {
   const all = []
   for (let c = 1; c <= 31; c++) {
     all.push({ bookId: 'proverbs', bookName: 'Proverbes', chapter: c, key: `proverbs-${c}` })

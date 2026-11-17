@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Check } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
@@ -16,12 +17,13 @@ const TOOLS = [
 ]
 
 export default function Chemin() {
-  const { growth, milestones, profile, setDailyMinutes, totals } = useSpiritualContext()
+  const { growth, milestones, profile, setDailyMinutes, totals, setName } = useSpiritualContext()
+  const [nameDraft, setNameDraft] = useState(profile.name)
   const doneCount = milestones.filter(m => m.done).length
 
   return (
     <div className="space-y-7">
-      <PageHeader icon={growth.stage.icon} title="Mon chemin" subtitle="Le grain de sénevé — Matthieu 13, 31-32" />
+      <PageHeader icon={growth.stage.icon} title={profile.name ? `Le chemin de ${profile.name}` : 'Mon chemin'} subtitle="Le grain de sénevé — Matthieu 13, 31-32" />
 
       {/* Croissance */}
       <section className="rounded-3xl p-6 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent border border-emerald-400/15 text-center">
@@ -87,6 +89,27 @@ export default function Chemin() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Prénom et guide */}
+      <section>
+        <h2 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2"><Icon3D name="writing" size={24} /> Moi</h2>
+        <div className="rounded-3xl bg-white/[0.03] border border-white/5 p-4 space-y-3">
+          <label className="block">
+            <span className="text-sm text-slate-400">Mon prénom</span>
+            <div className="flex gap-2 mt-1.5">
+              <input value={nameDraft} onChange={e => setNameDraft(e.target.value)} maxLength={40}
+                autoComplete="given-name" placeholder="Votre prénom" className="input flex-1" />
+              <button onClick={() => setName(nameDraft)} disabled={nameDraft.trim() === profile.name}
+                className="btn-secondary min-h-[44px] disabled:opacity-40">Enregistrer</button>
+            </div>
+          </label>
+          <Link to="/bienvenue?revoir" className="flex items-center gap-3 min-h-[52px] text-slate-200">
+            <Icon3D name="bulb" size={28} />
+            <span className="flex-1">Revoir le guide de l'appli</span>
+            <ChevronRight size={18} className="text-slate-600" />
+          </Link>
         </div>
       </section>
 

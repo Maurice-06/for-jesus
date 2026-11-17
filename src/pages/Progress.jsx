@@ -2,12 +2,9 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, PieChart, Pie, Cell, Legend
+  AreaChart, Area,
 } from 'recharts'
-import {
-  TrendingUp, Flame, BookOpen, Heart, Target, Trophy, Star,
-  Calendar, ChevronRight, Award, Zap
-} from 'lucide-react'
+import { Flame, BookOpen, Heart, Target, Trophy, Star, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import PageHeader from '../components/PageHeader'

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
-import { SpiritualProvider } from './context/SpiritualContext'
+import { BrowserRouter, Routes, Route, Link, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { SpiritualProvider, useSpiritualContext } from './context/SpiritualContext'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import LockGate from './components/LockGate'
@@ -14,6 +14,7 @@ const Progress = lazy(() => import('./pages/Progress'))
 const Outils = lazy(() => import('./pages/Outils'))
 const Chemin = lazy(() => import('./pages/Chemin'))
 const Moment = lazy(() => import('./pages/Moment'))
+const Bienvenue = lazy(() => import('./pages/Bienvenue'))
 
 function PageLoader() {
   return (
@@ -32,6 +33,14 @@ function NotFound() {
   )
 }
 
+// Au premier lancement, on présente l'appli avant tout le reste
+function RequireOnboarding() {
+  const { profile } = useSpiritualContext()
+  const location = useLocation()
+  if (!profile.onboarded) return <Navigate to="/bienvenue" replace state={{ from: location.pathname }} />
+  return <Outlet />
+}
+
 const page = (el) => <Suspense fallback={<PageLoader />}>{el}</Suspense>
 
 export default function App() {
@@ -41,6 +50,8 @@ export default function App() {
       <LockGate>
       <SpiritualProvider>
         <Routes>
+          <Route path="/bienvenue" element={page(<Bienvenue />)} />
+          <Route element={<RequireOnboarding />}>
           {/* Parcours guidé en plein écran, sans barre de navigation */}
           <Route path="/moment" element={page(<Moment />)} />
           <Route path="/" element={<Layout />}>
@@ -53,6 +64,7 @@ export default function App() {
             <Route path="outils" element={page(<Outils />)} />
             <Route path="progres" element={page(<Progress />)} />
             <Route path="*" element={<NotFound />} />
+          </Route>
           </Route>
         </Routes>
       </SpiritualProvider>

@@ -75,7 +75,7 @@ export const ALL_BOOKS = [...OLD_TESTAMENT, ...NEW_TESTAMENT]
 export const TOTAL_CHAPTERS = ALL_BOOKS.reduce((sum, book) => sum + book.chapters, 0)
 
 // Mapping abréviations/noms français → id du livre
-export const FRENCH_BOOK_MAP = {
+const FRENCH_BOOK_MAP = {
   // Ancien Testament
   'genèse': 'genesis', 'gen': 'genesis', 'gn': 'genesis',
   'exode': 'exodus', 'ex': 'exodus',

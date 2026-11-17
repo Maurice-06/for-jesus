@@ -15,12 +15,11 @@ const randomBytes = (n) => crypto.getRandomValues(new Uint8Array(n))
 export function readLock() {
   try { return JSON.parse(localStorage.getItem(LOCK_KEY)) || null } catch { return null }
 }
-export function writeLock(lock) {
+function writeLock(lock) {
   if (lock) localStorage.setItem(LOCK_KEY, JSON.stringify(lock))
   else localStorage.removeItem(LOCK_KEY)
   window.dispatchEvent(new CustomEvent('fj-storage', { detail: { key: LOCK_KEY } }))
 }
-export const isLockEnabled = () => !!readLock()?.enabled
 
 async function derive(pin, saltB64, iterations) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits'])

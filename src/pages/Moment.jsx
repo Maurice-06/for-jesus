@@ -178,7 +178,7 @@ export default function Moment() {
             {current === 'fin' && saved && (
               <div className="flex-1 flex flex-col items-center justify-center text-center gap-5">
                 <Icon3D name="sparkles" size={88} />
-                <h1 className="text-2xl font-semibold text-slate-50">Merci pour ce moment</h1>
+                <h1 className="text-2xl font-semibold text-slate-50">Merci pour ce moment{profile.name ? `, ${profile.name}` : ''}</h1>
                 <p className="font-serif italic text-lg text-slate-200 max-w-sm leading-relaxed">
                   « Que le Seigneur te bénisse et te garde ! Qu’il fasse briller sur toi son visage. »
                 </p>

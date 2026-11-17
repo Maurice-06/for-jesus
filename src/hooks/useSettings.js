@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 
-export const DEFAULT_SETTINGS = {
+const DEFAULT_SETTINGS = {
   theme: 'auto',          // 'auto' (comme le téléphone) | 'dark' | 'light'
   textSize: 'normal',     // 'normal' | 'large' | 'xlarge'
   reminderTime: '07:30',  // heure du rappel quotidien (calendrier)

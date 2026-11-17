@@ -28,6 +28,7 @@ export function useLocalStorage(key, initialValue) {
       window.dispatchEvent(new CustomEvent('fj-storage', { detail: { key } }))
     } catch (error) {
       console.error('Sauvegarde impossible :', error)
+      window.dispatchEvent(new CustomEvent('fj-storage-error'))
     }
   }, [key])
 

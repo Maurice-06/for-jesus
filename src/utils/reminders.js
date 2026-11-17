@@ -18,14 +18,14 @@ const fold = (line) => {
   out.push(cur)
   return out.join('\r\n ')
 }
-const esc = (t) => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\n/g, '\\n')
+const esc = (t) => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n')
 
 /**
  * Crée un évènement quotidien répété avec une alerte à l'heure.
  * Heure « flottante » (sans fuseau) : elle reste à l'heure locale du téléphone,
  * même en voyage.
  */
-export function buildIcs({ uid, time, title, description, url, minutes = 10 }) {
+function buildIcs({ uid, time, title, description, url, minutes = 10 }) {
   const [h, m] = time.split(':').map(Number)
   const start = new Date()
   start.setDate(start.getDate() + 1) // à partir de demain

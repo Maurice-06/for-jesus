@@ -6,7 +6,7 @@ const CACHE_KEY = 'fj_aelfCache_v2'
 const KEEP_DAYS = 4
 
 /** HTML de l'AELF → texte brut avec retours à la ligne. Rien n'est injecté dans la page. */
-export function htmlToText(html) {
+function htmlToText(html) {
   if (!html) return ''
   const marked = String(html)
     .replace(/\s*\r?\n\s*/g, ' ') // en HTML, un retour à la ligne brut n'est qu'un espace

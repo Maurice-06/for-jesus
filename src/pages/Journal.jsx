@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  NotebookPen, Plus, Trash2, ChevronDown, X, Sparkles, Heart,
-  Sun, Cloud, CloudRain, Anchor, Star, Search, Edit3
-} from 'lucide-react'
+import { Plus, X, Search, Edit3 } from 'lucide-react'
 import { useSpiritualContext } from '../context/SpiritualContext'
 import ConfirmButton from '../components/ConfirmButton'
 import Icon3D from '../components/Icon3D'
@@ -12,12 +9,12 @@ import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 const MOODS = [
-  { id: 'joyful', label: 'Joyeux/se', icon3d: 'sun', icon: Sun, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  { id: 'peaceful', label: 'En paix', icon3d: 'dove', icon: Anchor, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  { id: 'grateful', label: 'Reconnaissant(e)', icon3d: 'star', icon: Star, color: 'text-gold-400 bg-gold-500/10 border-gold-500/20' },
-  { id: 'seeking', label: 'En quête', icon3d: 'bulb', icon: Cloud, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
-  { id: 'struggling', label: 'Dans l\'épreuve', icon3d: 'anchor', icon: CloudRain, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
-  { id: 'renewed', label: 'Renouvelé(e)', icon3d: 'sparkles', icon: Sparkles, color: 'text-spirit-400 bg-spirit-500/10 border-spirit-500/20' },
+  { id: 'joyful', label: 'Joyeux/se', icon3d: 'sun', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
+  { id: 'peaceful', label: 'En paix', icon3d: 'dove', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  { id: 'grateful', label: 'Reconnaissant(e)', icon3d: 'star', color: 'text-gold-400 bg-gold-500/10 border-gold-500/20' },
+  { id: 'seeking', label: 'En quête', icon3d: 'bulb', color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
+  { id: 'struggling', label: 'Dans l\'épreuve', icon3d: 'anchor', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+  { id: 'renewed', label: 'Renouvelé(e)', icon3d: 'sparkles', color: 'text-spirit-400 bg-spirit-500/10 border-spirit-500/20' },
 ]
 
 const REFLECTION_PROMPTS = [
@@ -33,7 +30,6 @@ const REFLECTION_PROMPTS = [
 function EntryCard({ entry, onDelete, onEdit }) {
   const [expanded, setExpanded] = useState(false)
   const mood = MOODS.find(m => m.id === entry.mood)
-  const MoodIcon = mood?.icon || Sun
   const dateStr = format(parseISO(entry.date + 'T00:00:00'), 'EEEE d MMMM yyyy', { locale: fr })
 
   return (
@@ -128,7 +124,6 @@ function JournalForm({ initial, onSave, onCancel }) {
           <label className="text-xs text-slate-500 mb-2 block">Comment vous sentez-vous spirituellement ?</label>
           <div className="flex flex-wrap gap-2">
             {MOODS.map(m => {
-              const MoodIcon = m.icon
               return (
                 <button
                   key={m.id}
@@ -153,6 +148,7 @@ function JournalForm({ initial, onSave, onCancel }) {
             type="text"
             placeholder="Ex: Jean 3:16 — Car Dieu a tant aimé..."
             value={verse}
+            maxLength={300}
             onChange={e => setVerse(e.target.value)}
             className="input text-sm"
           />
@@ -167,6 +163,7 @@ function JournalForm({ initial, onSave, onCancel }) {
           <textarea
             placeholder="Écrivez librement ce que Dieu a mis sur votre cœur..."
             value={content}
+            maxLength={20000}
             onChange={e => setContent(e.target.value)}
             className="input text-[1rem] leading-relaxed resize-none h-40"
           />
@@ -180,6 +177,7 @@ function JournalForm({ initial, onSave, onCancel }) {
               type="text"
               placeholder="Ajouter une gratitude..."
               value={gratitudeInput}
+              maxLength={200}
               onChange={e => setGratitudeInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addGratitude())}
               className="input text-sm flex-1"

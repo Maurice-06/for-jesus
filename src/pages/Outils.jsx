@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  BookMarked, Target, Brain, Lightbulb, ChevronRight, ChevronDown,
-  CheckCircle2, Circle, Play, RotateCcw, Bookmark, Trash2, X, Search, AlertTriangle, TrendingUp, Save
+  Target, ChevronRight, ChevronDown, CheckCircle2, Circle, Play, RotateCcw, Bookmark, Search,
 } from 'lucide-react'
 import { READING_PLANS, expectedByDay, chaptersPerDay } from '../data/readingPlans'
 import { useSpiritualContext } from '../context/SpiritualContext'
@@ -22,7 +21,7 @@ const fadeUp = {
 
 // ─── Plans de lecture ──────────────────────────────────────────────────────────
 function ReadingPlans() {
-  const { readingProgress, markBibleRead } = useSpiritualContext()
+  const { readingProgress } = useSpiritualContext()
   const [activePlanId, setActivePlanId] = useLocalStorage('fj_activePlan', null)
   const [planStartDate, setPlanStartDate] = useLocalStorage('fj_planStart', null)
   const [expanded, setExpanded] = useState(null)
@@ -240,7 +239,6 @@ function ExaminationOfConscience() {
   }
 
   const checkedCount = Object.values(checked).filter(Boolean).length
-  const totalQuestions = EXAMINATION.reduce((s, c) => s + c.questions.length, 0)
 
   if (phase === 'prayer') {
     return (

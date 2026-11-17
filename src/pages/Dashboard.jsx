@@ -49,7 +49,9 @@ export default function Dashboard() {
       {/* En-tête : date et calendrier liturgique */}
       <Section i={0}>
         <p className="text-slate-400 text-sm capitalize">{format(now, 'EEEE d MMMM', { locale: fr })}</p>
-        <h1 className="text-[1.75rem] font-bold text-slate-50 tracking-tight">{greeting(now.getHours())} 🙏</h1>
+        <h1 className="text-[1.75rem] font-bold text-slate-50 tracking-tight">
+          {greeting(now.getHours())}{profile.name ? `, ${profile.name}` : ''} 🙏
+        </h1>
         {messe && (
           <p className="mt-1 text-sm text-slate-400 flex items-center gap-2">
             {couleur && <span className="inline-block w-2.5 h-2.5 rounded-full ring-1 ring-slate-500/50" style={{ backgroundColor: couleur.hex }} title={`Couleur liturgique : ${couleur.label}`} />}
